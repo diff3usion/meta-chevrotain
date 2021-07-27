@@ -3,14 +3,21 @@
 
 ## Warning
   This is a improvisational project and is **NOT TESTED AT ALL**. It might be improved in the future.
-## Syntax
+## Examples
   [Rail Diagram](https://diff3usion.github.io/meta-chevrotain/)
+  
   [Bootstrapping Definition](https://github.com/diff3usion/meta-chevrotain/blob/main/meta_in.txt)
+  
+  [Generated Parser](https://github.com/diff3usion/meta-chevrotain/blob/main/src/meta_parser.ts)
+  
+  [Generated Typing](https://github.com/diff3usion/meta-chevrotain/blob/main/src/meta_type.d.ts)
   
 ## Requires
   [node](https://github.com/nodejs/node), [yarn](https://github.com/yarnpkg/berry)
+  
 ## Init
     yarn
+    
 ## Usage
   ### Bootstrapping
     yarn start -b
@@ -20,3 +27,4 @@
     yarn start -i input.txt -t
   ### Read file and output to files
     yarn start -i input.txt --ts parser.ts --dts cst.d.ts
+
