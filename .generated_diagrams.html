@@ -1,0 +1,1206 @@
+
+<!-- This is a generated file -->
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+  body {
+    background-color: hsl(30, 20%, 95%)
+  }
+</style>
+
+
+<link rel='stylesheet' href='https://unpkg.com/chevrotain@9.0.2/diagrams/diagrams.css'>
+
+<script src='https://unpkg.com/chevrotain@9.0.2/diagrams/vendor/railroad-diagrams.js'></script>
+<script src='https://unpkg.com/chevrotain@9.0.2/diagrams/src/diagrams_builder.js'></script>
+<script src='https://unpkg.com/chevrotain@9.0.2/diagrams/src/diagrams_behavior.js'></script>
+<script src='https://unpkg.com/chevrotain@9.0.2/diagrams/src/main.js'></script>
+
+<div id="diagrams" align="center"></div>    
+
+<script>
+    window.serializedGrammar = [
+  {
+    "type": "Rule",
+    "name": "ArgumentSep",
+    "orgText": "",
+    "definition": [
+      {
+        "type": "Terminal",
+        "name": "Semicolon",
+        "label": "Semicolon",
+        "idx": 0,
+        "pattern": ";"
+      },
+      {
+        "type": "Terminal",
+        "name": "Identifier",
+        "label": "Identifier",
+        "idx": 1,
+        "pattern": "\\w+"
+      }
+    ]
+  },
+  {
+    "type": "Rule",
+    "name": "BacktrackPredicate",
+    "orgText": "",
+    "definition": [
+      {
+        "type": "Terminal",
+        "name": "LAngle",
+        "label": "LAngle",
+        "idx": 0,
+        "pattern": "\\<"
+      },
+      {
+        "type": "Alternation",
+        "idx": 0,
+        "definition": [
+          {
+            "type": "Alternative",
+            "definition": [
+              {
+                "type": "Terminal",
+                "name": "Identifier",
+                "label": "Identifier",
+                "idx": 1,
+                "pattern": "\\w+"
+              }
+            ]
+          },
+          {
+            "type": "Alternative",
+            "definition": [
+              {
+                "type": "NonTerminal",
+                "name": "Statement",
+                "idx": 0
+              }
+            ]
+          },
+          {
+            "type": "Alternative",
+            "definition": [
+              {
+                "type": "NonTerminal",
+                "name": "StatementList",
+                "idx": 1
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "Rule",
+    "name": "ArgumentGate",
+    "orgText": "",
+    "definition": [
+      {
+        "type": "Terminal",
+        "name": "RAngle",
+        "label": "RAngle",
+        "idx": 0,
+        "pattern": "\\>"
+      },
+      {
+        "type": "Alternation",
+        "idx": 0,
+        "definition": [
+          {
+            "type": "Alternative",
+            "definition": [
+              {
+                "type": "Terminal",
+                "name": "EscapedString",
+                "label": "EscapedString",
+                "idx": 1,
+                "pattern": "#[^#]*#"
+              }
+            ]
+          },
+          {
+            "type": "Alternative",
+            "definition": [
+              {
+                "type": "NonTerminal",
+                "name": "BacktrackPredicate",
+                "idx": 0
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "Rule",
+    "name": "ArgumentErr",
+    "orgText": "",
+    "definition": [
+      {
+        "type": "Terminal",
+        "name": "Exclamation",
+        "label": "Exclamation",
+        "idx": 0,
+        "pattern": "\\!"
+      },
+      {
+        "type": "Terminal",
+        "name": "EscapedString",
+        "label": "EscapedString",
+        "idx": 1,
+        "pattern": "#[^#]*#"
+      }
+    ]
+  },
+  {
+    "type": "Rule",
+    "name": "ArgumentMaxLa",
+    "orgText": "",
+    "definition": [
+      {
+        "type": "Terminal",
+        "name": "Caret",
+        "label": "Caret",
+        "idx": 0,
+        "pattern": "\\^"
+      },
+      {
+        "type": "Terminal",
+        "name": "EscapedString",
+        "label": "EscapedString",
+        "idx": 1,
+        "pattern": "#[^#]*#"
+      }
+    ]
+  },
+  {
+    "type": "Rule",
+    "name": "ArgumentLabel",
+    "orgText": "",
+    "definition": [
+      {
+        "type": "Terminal",
+        "name": "At",
+        "label": "At",
+        "idx": 0,
+        "pattern": "\\@"
+      },
+      {
+        "type": "Terminal",
+        "name": "EscapedString",
+        "label": "EscapedString",
+        "idx": 1,
+        "pattern": "#[^#]*#"
+      }
+    ]
+  },
+  {
+    "type": "Rule",
+    "name": "AtLeastOneArguments",
+    "orgText": "",
+    "definition": [
+      {
+        "type": "Terminal",
+        "name": "LBrace",
+        "label": "LBrace",
+        "idx": 0,
+        "pattern": "\\("
+      },
+      {
+        "type": "RepetitionMandatory",
+        "idx": 0,
+        "definition": [
+          {
+            "type": "Alternation",
+            "idx": 0,
+            "definition": [
+              {
+                "type": "Alternative",
+                "definition": [
+                  {
+                    "type": "NonTerminal",
+                    "name": "ArgumentSep",
+                    "idx": 0
+                  }
+                ]
+              },
+              {
+                "type": "Alternative",
+                "definition": [
+                  {
+                    "type": "NonTerminal",
+                    "name": "ArgumentGate",
+                    "idx": 1
+                  }
+                ]
+              },
+              {
+                "type": "Alternative",
+                "definition": [
+                  {
+                    "type": "NonTerminal",
+                    "name": "ArgumentErr",
+                    "idx": 2
+                  }
+                ]
+              },
+              {
+                "type": "Alternative",
+                "definition": [
+                  {
+                    "type": "NonTerminal",
+                    "name": "ArgumentMaxLa",
+                    "idx": 3
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "Terminal",
+        "name": "RBrace",
+        "label": "RBrace",
+        "idx": 1,
+        "pattern": "\\)"
+      }
+    ]
+  },
+  {
+    "type": "Rule",
+    "name": "AtLeastOneStatement",
+    "orgText": "",
+    "definition": [
+      {
+        "type": "Terminal",
+        "name": "OnePlus",
+        "label": "OnePlus",
+        "idx": 0,
+        "pattern": "1\\+"
+      },
+      {
+        "type": "Option",
+        "idx": 0,
+        "definition": [
+          {
+            "type": "NonTerminal",
+            "name": "AtLeastOneArguments",
+            "idx": 0
+          }
+        ]
+      },
+      {
+        "type": "Alternation",
+        "idx": 0,
+        "definition": [
+          {
+            "type": "Alternative",
+            "definition": [
+              {
+                "type": "NonTerminal",
+                "name": "Statement",
+                "idx": 1
+              }
+            ]
+          },
+          {
+            "type": "Alternative",
+            "definition": [
+              {
+                "type": "NonTerminal",
+                "name": "StatementList",
+                "idx": 2
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "Rule",
+    "name": "ConsumeArguments",
+    "orgText": "",
+    "definition": [
+      {
+        "type": "Terminal",
+        "name": "LBrace",
+        "label": "LBrace",
+        "idx": 0,
+        "pattern": "\\("
+      },
+      {
+        "type": "RepetitionMandatory",
+        "idx": 0,
+        "definition": [
+          {
+            "type": "Alternation",
+            "idx": 0,
+            "definition": [
+              {
+                "type": "Alternative",
+                "definition": [
+                  {
+                    "type": "NonTerminal",
+                    "name": "ArgumentErr",
+                    "idx": 0
+                  }
+                ]
+              },
+              {
+                "type": "Alternative",
+                "definition": [
+                  {
+                    "type": "NonTerminal",
+                    "name": "ArgumentLabel",
+                    "idx": 1
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "Terminal",
+        "name": "RBrace",
+        "label": "RBrace",
+        "idx": 1,
+        "pattern": "\\)"
+      }
+    ]
+  },
+  {
+    "type": "Rule",
+    "name": "ConsumeStatement",
+    "orgText": "",
+    "definition": [
+      {
+        "type": "Terminal",
+        "name": "Underscore",
+        "label": "Underscore",
+        "idx": 0,
+        "pattern": "\\_"
+      },
+      {
+        "type": "Option",
+        "idx": 0,
+        "definition": [
+          {
+            "type": "NonTerminal",
+            "name": "ConsumeArguments",
+            "idx": 0
+          }
+        ]
+      },
+      {
+        "type": "Terminal",
+        "name": "Identifier",
+        "label": "Identifier",
+        "idx": 1,
+        "pattern": "\\w+"
+      }
+    ]
+  },
+  {
+    "type": "Rule",
+    "name": "ManyArguments",
+    "orgText": "",
+    "definition": [
+      {
+        "type": "Terminal",
+        "name": "LBrace",
+        "label": "LBrace",
+        "idx": 0,
+        "pattern": "\\("
+      },
+      {
+        "type": "RepetitionMandatory",
+        "idx": 0,
+        "definition": [
+          {
+            "type": "Alternation",
+            "idx": 0,
+            "definition": [
+              {
+                "type": "Alternative",
+                "definition": [
+                  {
+                    "type": "NonTerminal",
+                    "name": "ArgumentSep",
+                    "idx": 0
+                  }
+                ]
+              },
+              {
+                "type": "Alternative",
+                "definition": [
+                  {
+                    "type": "NonTerminal",
+                    "name": "ArgumentGate",
+                    "idx": 1
+                  }
+                ]
+              },
+              {
+                "type": "Alternative",
+                "definition": [
+                  {
+                    "type": "NonTerminal",
+                    "name": "ArgumentMaxLa",
+                    "idx": 2
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "Terminal",
+        "name": "RBrace",
+        "label": "RBrace",
+        "idx": 1,
+        "pattern": "\\)"
+      }
+    ]
+  },
+  {
+    "type": "Rule",
+    "name": "ManyStatement",
+    "orgText": "",
+    "definition": [
+      {
+        "type": "Terminal",
+        "name": "ZeroPlus",
+        "label": "ZeroPlus",
+        "idx": 0,
+        "pattern": "0\\+"
+      },
+      {
+        "type": "Option",
+        "idx": 0,
+        "definition": [
+          {
+            "type": "NonTerminal",
+            "name": "ManyArguments",
+            "idx": 0
+          }
+        ]
+      },
+      {
+        "type": "Alternation",
+        "idx": 0,
+        "definition": [
+          {
+            "type": "Alternative",
+            "definition": [
+              {
+                "type": "NonTerminal",
+                "name": "Statement",
+                "idx": 1
+              }
+            ]
+          },
+          {
+            "type": "Alternative",
+            "definition": [
+              {
+                "type": "NonTerminal",
+                "name": "StatementList",
+                "idx": 2
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "Rule",
+    "name": "OptionArguments",
+    "orgText": "",
+    "definition": [
+      {
+        "type": "Terminal",
+        "name": "LBrace",
+        "label": "LBrace",
+        "idx": 0,
+        "pattern": "\\("
+      },
+      {
+        "type": "RepetitionMandatory",
+        "idx": 0,
+        "definition": [
+          {
+            "type": "Alternation",
+            "idx": 0,
+            "definition": [
+              {
+                "type": "Alternative",
+                "definition": [
+                  {
+                    "type": "NonTerminal",
+                    "name": "ArgumentGate",
+                    "idx": 0
+                  }
+                ]
+              },
+              {
+                "type": "Alternative",
+                "definition": [
+                  {
+                    "type": "NonTerminal",
+                    "name": "ArgumentMaxLa",
+                    "idx": 1
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "Terminal",
+        "name": "RBrace",
+        "label": "RBrace",
+        "idx": 1,
+        "pattern": "\\)"
+      }
+    ]
+  },
+  {
+    "type": "Rule",
+    "name": "OptionStatement",
+    "orgText": "",
+    "definition": [
+      {
+        "type": "Terminal",
+        "name": "Question",
+        "label": "Question",
+        "idx": 0,
+        "pattern": "\\?"
+      },
+      {
+        "type": "Option",
+        "idx": 0,
+        "definition": [
+          {
+            "type": "NonTerminal",
+            "name": "OptionArguments",
+            "idx": 0
+          }
+        ]
+      },
+      {
+        "type": "Alternation",
+        "idx": 0,
+        "definition": [
+          {
+            "type": "Alternative",
+            "definition": [
+              {
+                "type": "NonTerminal",
+                "name": "Statement",
+                "idx": 1
+              }
+            ]
+          },
+          {
+            "type": "Alternative",
+            "definition": [
+              {
+                "type": "NonTerminal",
+                "name": "StatementList",
+                "idx": 2
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "Rule",
+    "name": "OrAlternativeArguments",
+    "orgText": "",
+    "definition": [
+      {
+        "type": "Terminal",
+        "name": "LBrace",
+        "label": "LBrace",
+        "idx": 0,
+        "pattern": "\\("
+      },
+      {
+        "type": "RepetitionMandatory",
+        "idx": 0,
+        "definition": [
+          {
+            "type": "Alternation",
+            "idx": 0,
+            "definition": [
+              {
+                "type": "Alternative",
+                "definition": [
+                  {
+                    "type": "NonTerminal",
+                    "name": "ArgumentGate",
+                    "idx": 0
+                  }
+                ]
+              },
+              {
+                "type": "Alternative",
+                "definition": [
+                  {
+                    "type": "Terminal",
+                    "name": "EscapedString",
+                    "label": "EscapedString",
+                    "idx": 2,
+                    "pattern": "#[^#]*#"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "Terminal",
+        "name": "RBrace",
+        "label": "RBrace",
+        "idx": 1,
+        "pattern": "\\)"
+      }
+    ]
+  },
+  {
+    "type": "Rule",
+    "name": "OrAlternative",
+    "orgText": "",
+    "definition": [
+      {
+        "type": "Terminal",
+        "name": "Backslash",
+        "label": "Backslash",
+        "idx": 0,
+        "pattern": "\\\\"
+      },
+      {
+        "type": "Option",
+        "idx": 0,
+        "definition": [
+          {
+            "type": "NonTerminal",
+            "name": "OrAlternativeArguments",
+            "idx": 0
+          }
+        ]
+      },
+      {
+        "type": "Alternation",
+        "idx": 0,
+        "definition": [
+          {
+            "type": "Alternative",
+            "definition": [
+              {
+                "type": "NonTerminal",
+                "name": "Statement",
+                "idx": 1
+              }
+            ]
+          },
+          {
+            "type": "Alternative",
+            "definition": [
+              {
+                "type": "NonTerminal",
+                "name": "StatementList",
+                "idx": 2
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "Rule",
+    "name": "OrArguments",
+    "orgText": "",
+    "definition": [
+      {
+        "type": "Terminal",
+        "name": "LBrace",
+        "label": "LBrace",
+        "idx": 0,
+        "pattern": "\\("
+      },
+      {
+        "type": "RepetitionMandatory",
+        "idx": 0,
+        "definition": [
+          {
+            "type": "Alternation",
+            "idx": 0,
+            "definition": [
+              {
+                "type": "Alternative",
+                "definition": [
+                  {
+                    "type": "NonTerminal",
+                    "name": "ArgumentErr",
+                    "idx": 0
+                  }
+                ]
+              },
+              {
+                "type": "Alternative",
+                "definition": [
+                  {
+                    "type": "NonTerminal",
+                    "name": "ArgumentMaxLa",
+                    "idx": 1
+                  }
+                ]
+              },
+              {
+                "type": "Alternative",
+                "definition": [
+                  {
+                    "type": "Terminal",
+                    "name": "EscapedString",
+                    "label": "EscapedString",
+                    "idx": 2,
+                    "pattern": "#[^#]*#"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "Terminal",
+        "name": "RBrace",
+        "label": "RBrace",
+        "idx": 1,
+        "pattern": "\\)"
+      }
+    ]
+  },
+  {
+    "type": "Rule",
+    "name": "OrStatement",
+    "orgText": "",
+    "definition": [
+      {
+        "type": "Terminal",
+        "name": "VBar",
+        "label": "VBar",
+        "idx": 0,
+        "pattern": "\\|"
+      },
+      {
+        "type": "Option",
+        "idx": 0,
+        "definition": [
+          {
+            "type": "NonTerminal",
+            "name": "OrArguments",
+            "idx": 0
+          }
+        ]
+      },
+      {
+        "type": "RepetitionMandatory",
+        "idx": 0,
+        "definition": [
+          {
+            "type": "NonTerminal",
+            "name": "OrAlternative",
+            "idx": 1
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "Rule",
+    "name": "SkipStatement",
+    "orgText": "",
+    "definition": [
+      {
+        "type": "Terminal",
+        "name": "Minus",
+        "label": "Minus",
+        "idx": 0,
+        "pattern": "\\-"
+      },
+      {
+        "type": "Terminal",
+        "name": "Identifier",
+        "label": "Identifier",
+        "idx": 1,
+        "pattern": "\\w+"
+      }
+    ]
+  },
+  {
+    "type": "Rule",
+    "name": "SubruleArguments",
+    "orgText": "",
+    "definition": [
+      {
+        "type": "Terminal",
+        "name": "LBrace",
+        "label": "LBrace",
+        "idx": 0,
+        "pattern": "\\("
+      },
+      {
+        "type": "RepetitionMandatory",
+        "idx": 0,
+        "definition": [
+          {
+            "type": "Alternation",
+            "idx": 0,
+            "definition": [
+              {
+                "type": "Alternative",
+                "definition": [
+                  {
+                    "type": "NonTerminal",
+                    "name": "ArgumentLabel",
+                    "idx": 0
+                  }
+                ]
+              },
+              {
+                "type": "Alternative",
+                "definition": [
+                  {
+                    "type": "Terminal",
+                    "name": "EscapedString",
+                    "label": "EscapedString",
+                    "idx": 2,
+                    "pattern": "#[^#]*#"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "Terminal",
+        "name": "RBrace",
+        "label": "RBrace",
+        "idx": 1,
+        "pattern": "\\)"
+      }
+    ]
+  },
+  {
+    "type": "Rule",
+    "name": "SubruleStatement",
+    "orgText": "",
+    "definition": [
+      {
+        "type": "Terminal",
+        "name": "Asterisk",
+        "label": "Asterisk",
+        "idx": 0,
+        "pattern": "\\*"
+      },
+      {
+        "type": "Option",
+        "idx": 0,
+        "definition": [
+          {
+            "type": "NonTerminal",
+            "name": "SubruleArguments",
+            "idx": 0
+          }
+        ]
+      },
+      {
+        "type": "Terminal",
+        "name": "Identifier",
+        "label": "Identifier",
+        "idx": 1,
+        "pattern": "\\w+"
+      }
+    ]
+  },
+  {
+    "type": "Rule",
+    "name": "Statement",
+    "orgText": "",
+    "definition": [
+      {
+        "type": "Alternation",
+        "idx": 0,
+        "definition": [
+          {
+            "type": "Alternative",
+            "definition": [
+              {
+                "type": "NonTerminal",
+                "name": "AtLeastOneStatement",
+                "idx": 0
+              }
+            ]
+          },
+          {
+            "type": "Alternative",
+            "definition": [
+              {
+                "type": "NonTerminal",
+                "name": "ConsumeStatement",
+                "idx": 1
+              }
+            ]
+          },
+          {
+            "type": "Alternative",
+            "definition": [
+              {
+                "type": "NonTerminal",
+                "name": "ManyStatement",
+                "idx": 2
+              }
+            ]
+          },
+          {
+            "type": "Alternative",
+            "definition": [
+              {
+                "type": "NonTerminal",
+                "name": "OptionStatement",
+                "idx": 3
+              }
+            ]
+          },
+          {
+            "type": "Alternative",
+            "definition": [
+              {
+                "type": "NonTerminal",
+                "name": "OrStatement",
+                "idx": 4
+              }
+            ]
+          },
+          {
+            "type": "Alternative",
+            "definition": [
+              {
+                "type": "NonTerminal",
+                "name": "SkipStatement",
+                "idx": 5
+              }
+            ]
+          },
+          {
+            "type": "Alternative",
+            "definition": [
+              {
+                "type": "NonTerminal",
+                "name": "SubruleStatement",
+                "idx": 6
+              }
+            ]
+          },
+          {
+            "type": "Alternative",
+            "definition": [
+              {
+                "type": "Terminal",
+                "name": "EscapedString",
+                "label": "EscapedString",
+                "idx": 0,
+                "pattern": "#[^#]*#"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "Rule",
+    "name": "StatementList",
+    "orgText": "",
+    "definition": [
+      {
+        "type": "Terminal",
+        "name": "LCurly",
+        "label": "LCurly",
+        "idx": 0,
+        "pattern": "{"
+      },
+      {
+        "type": "Repetition",
+        "idx": 0,
+        "definition": [
+          {
+            "type": "NonTerminal",
+            "name": "Statement",
+            "idx": 0
+          }
+        ]
+      },
+      {
+        "type": "Terminal",
+        "name": "RCurly",
+        "label": "RCurly",
+        "idx": 1,
+        "pattern": "}"
+      }
+    ]
+  },
+  {
+    "type": "Rule",
+    "name": "RuleArguments",
+    "orgText": "",
+    "definition": [
+      {
+        "type": "Terminal",
+        "name": "LBrace",
+        "label": "LBrace",
+        "idx": 0,
+        "pattern": "\\("
+      },
+      {
+        "type": "RepetitionMandatory",
+        "idx": 0,
+        "definition": [
+          {
+            "type": "Terminal",
+            "name": "EscapedString",
+            "label": "EscapedString",
+            "idx": 2,
+            "pattern": "#[^#]*#"
+          }
+        ]
+      },
+      {
+        "type": "Terminal",
+        "name": "RBrace",
+        "label": "RBrace",
+        "idx": 1,
+        "pattern": "\\)"
+      }
+    ]
+  },
+  {
+    "type": "Rule",
+    "name": "RuleStatement",
+    "orgText": "",
+    "definition": [
+      {
+        "type": "Option",
+        "idx": 0,
+        "definition": [
+          {
+            "type": "Terminal",
+            "name": "Equals",
+            "label": "Equals",
+            "idx": 1,
+            "pattern": "\\="
+          }
+        ]
+      },
+      {
+        "type": "Option",
+        "idx": 1,
+        "definition": [
+          {
+            "type": "NonTerminal",
+            "name": "RuleArguments",
+            "idx": 1
+          }
+        ]
+      },
+      {
+        "type": "Terminal",
+        "name": "Identifier",
+        "label": "Identifier",
+        "idx": 0,
+        "pattern": "\\w+"
+      },
+      {
+        "type": "NonTerminal",
+        "name": "StatementList",
+        "idx": 0
+      }
+    ]
+  },
+  {
+    "type": "Rule",
+    "name": "RootStatement",
+    "orgText": "",
+    "definition": [
+      {
+        "type": "Alternation",
+        "idx": 0,
+        "definition": [
+          {
+            "type": "Alternative",
+            "definition": [
+              {
+                "type": "NonTerminal",
+                "name": "RuleStatement",
+                "idx": 0
+              }
+            ]
+          },
+          {
+            "type": "Alternative",
+            "definition": [
+              {
+                "type": "Terminal",
+                "name": "EscapedString",
+                "label": "EscapedString",
+                "idx": 0,
+                "pattern": "#[^#]*#"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "Rule",
+    "name": "Root",
+    "orgText": "",
+    "definition": [
+      {
+        "type": "Repetition",
+        "idx": 0,
+        "definition": [
+          {
+            "type": "NonTerminal",
+            "name": "RootStatement",
+            "idx": 0
+          }
+        ]
+      }
+    ]
+  }
+];
+</script>
+
+<script>
+    var diagramsDiv = document.getElementById("diagrams");
+    main.drawDiagramsFromSerializedGrammar(serializedGrammar, diagramsDiv);
+</script>
