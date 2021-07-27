@@ -1,7 +1,7 @@
 {
   "name": "meta-chevrotain",
   "version": "0.0.1",
-  "description": "dsl for generating chevrotain parser and cst typing",
+  "description": "DSL for generating chevrotain parser code and cst typing",
   "main": "index.ts",
   "license": "MIT",
   "scripts": {
