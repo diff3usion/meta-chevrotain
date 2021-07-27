@@ -1,0 +1,169 @@
+#
+import { CstNode, CstParser, TokenType } from "chevrotain";
+import { Semicolon, Identifier, LAngle, RAngle, EscapedString, Exclamation, Caret, At, LBrace, RBrace, OnePlus, Underscore, ZeroPlus, Question, Backslash, VBar, Minus, Asterisk, LCurly, RCurly, Equals } from "./meta_lexer";
+
+export class MetaParser extends CstParser {
+    readonly Root: (idxInCallingRule?: number, ...args: any[]) => CstNode
+    constructor(tokens: TokenType[]) {
+        super(tokens, {
+            recoveryEnabled: true
+        })
+
+        const $ = this;
+#
+
+ArgumentSep {
+    _Semicolon
+    _Identifier
+}
+BacktrackPredicate {
+    _LAngle
+    |\_Identifier
+     \*Statement
+     \*StatementList
+}
+ArgumentGate {
+    _RAngle
+    |\_EscapedString
+     \*BacktrackPredicate
+}
+ArgumentErr {
+    _Exclamation
+    _EscapedString
+}
+ArgumentMaxLa {
+    _Caret
+    _EscapedString
+}
+ArgumentLabel {
+    _At
+    _EscapedString
+}
+AtLeastOneArguments {
+    _LBrace
+    1+  |\*ArgumentSep
+         \*ArgumentGate
+         \*ArgumentErr
+         \*ArgumentMaxLa
+    _RBrace
+}
+AtLeastOneStatement {
+    _OnePlus
+    ?*AtLeastOneArguments
+    |\*Statement
+     \*StatementList
+}
+ConsumeArguments {
+    _LBrace
+    1+  |\*ArgumentErr
+         \*ArgumentLabel
+    _RBrace
+}
+ConsumeStatement {
+    _Underscore
+    ?*ConsumeArguments
+    _Identifier
+}
+ManyArguments {
+    _LBrace
+    1+  |\*ArgumentSep
+         \*ArgumentGate
+         \*ArgumentMaxLa
+    _RBrace
+}
+ManyStatement {
+    _ZeroPlus
+    ?*ManyArguments
+    |\*Statement
+     \*StatementList
+}
+OptionArguments {
+    _LBrace
+    1+  |\*ArgumentGate
+         \*ArgumentMaxLa
+    _RBrace
+}
+OptionStatement {
+    _Question
+    ?*OptionArguments
+    |\*Statement
+     \*StatementList
+}
+OrAlternativeArguments {
+    _LBrace
+    1+  |\*ArgumentGate
+         \_EscapedString
+    _RBrace
+}
+OrAlternative {
+    _Backslash
+    ?*OrAlternativeArguments
+    |\*Statement
+     \*StatementList
+}
+OrArguments {
+    _LBrace
+    1+  |\*ArgumentErr
+         \*ArgumentMaxLa
+         \_EscapedString
+    _RBrace
+}
+OrStatement {
+    _VBar
+    ?*OrArguments
+    1+*OrAlternative
+}
+SkipStatement {
+    _Minus
+    _Identifier
+}
+SubruleArguments {
+    _LBrace
+    1+  |\*ArgumentLabel
+         \_EscapedString
+    _RBrace
+}
+SubruleStatement {
+    _Asterisk
+    ?*SubruleArguments
+    _Identifier
+}
+Statement {
+    |\*AtLeastOneStatement
+     \*ConsumeStatement
+     \*ManyStatement
+     \*OptionStatement
+     \*OrStatement
+     \*SkipStatement
+     \*SubruleStatement
+     \_EscapedString
+}
+StatementList {
+    _LCurly
+    0+*Statement
+    _RCurly
+}
+RuleArguments {
+    _LBrace
+    1+_EscapedString
+    _RBrace
+}
+RuleStatement {
+    ?_Equals
+    ?*RuleArguments
+    _Identifier
+    *StatementList
+}
+RootStatement {
+    |\*RuleStatement
+     \_EscapedString
+}
+=Root {
+    0+*RootStatement
+}
+
+#
+        this.performSelfAnalysis();
+    }
+}
+#
