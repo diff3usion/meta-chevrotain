@@ -4,7 +4,7 @@ import { js_beautify } from 'js-beautify'
 import { ConsumeStatementNode, SubruleStatementNode, StatementNode, RuleStatementNode, RootNode } from './meta_type';
 import { MetaParser } from './meta_parser';
 import { lexer, tokens } from './meta_lexer';
-import { JsSegmentBuilder } from './meta_js_segment'
+import { buildRoot } from './meta_js_segment'
 
 export type JsSegment = {
     node        : CstNode
@@ -150,7 +150,7 @@ const generatedFileHeadComment =
 export const makeTsFile: (root: RootNode) => string 
 = root => {
     prebuildIndexes(root)
-    return js_beautify(generatedFileHeadComment + concatSegments(JsSegmentBuilder.buildRoot(root)))
+    return js_beautify(generatedFileHeadComment + concatSegments(buildRoot(root)))
 }
 
 export const makeDtsFile: (root: RootNode) => string 
