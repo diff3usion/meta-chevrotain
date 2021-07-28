@@ -62,7 +62,7 @@ export namespace JsSegmentBuilder {
         const statement = node.children.Statement
         const statementList = node.children.StatementList
     
-        const prefix = '$.BACKTRACK('
+        const prefix = 'this.BACKTRACK('
         const segments: JsSegment[] = []
         segments.push({ node, str: prefix })
         if (id) {
@@ -120,7 +120,7 @@ export namespace JsSegmentBuilder {
     
         const functionName = args && args[0] && args[0].children.ArgumentSep? 'AT_LEAST_ONE_SEP': 'AT_LEAST_ONE'
         const indexStr = node.index? `${node.index}`: ''
-        const [prefix, suffix] = [`$.${functionName}${indexStr}({ DEF: `, ' })']
+        const [prefix, suffix] = [`this.${functionName}${indexStr}({ DEF: `, ' })']
         const segments: JsSegment[] = []
     
         segments.push({ node, str: prefix })
@@ -173,7 +173,7 @@ export namespace JsSegmentBuilder {
     = node => {
         const args = node.children.ConsumeArguments
         const id = node.children.Identifier
-        const prefix = node.index === undefined? '$.CONSUME( ': `$.consume(${node.index}, `
+        const prefix = node.index === undefined? 'this.CONSUME( ': `this.consume(${node.index}, `
         const segments: JsSegment[] = []
         assert(id && id[0])
         const str = prefix + id[0].image + braceSuffix
@@ -207,7 +207,7 @@ export namespace JsSegmentBuilder {
         const statementList = node.children.StatementList
         const functionName = args && args[0] && args[0].children.ArgumentSep? 'MANY_SEP': 'MANY'
         const indexStr = node.index? `${node.index}`: ''
-        const [prefix, suffix] = [`$.${functionName}${indexStr}({ DEF: `, ' })']
+        const [prefix, suffix] = [`this.${functionName}${indexStr}({ DEF: `, ' })']
         const segments: JsSegment[] = []
         segments.push({ node, str: prefix })
         
@@ -254,7 +254,7 @@ export namespace JsSegmentBuilder {
         const args = node.children.OptionArguments
         const statement = node.children.Statement
         const statementList = node.children.StatementList
-        const prefix = node.index === undefined? '$.OPTION( ': `$.option(${node.index}, `
+        const prefix = node.index === undefined? 'this.OPTION( ': `this.option(${node.index}, `
         const segments: JsSegment[] = []
         segments.push({ node, str: prefix })
     
@@ -338,7 +338,7 @@ export namespace JsSegmentBuilder {
     = node => {
         const args = node.children.OrArguments
         const alternatives = node.children.OrAlternative
-        const prefix = node.index === undefined? '$.OR([ ': `$.or(${node.index}, [`
+        const prefix = node.index === undefined? 'this.OR([ ': `this.or(${node.index}, [`
         const suffix = ' ])'
         const segments: JsSegment[] = []
         segments.push({ node, str: prefix })
@@ -389,7 +389,7 @@ export namespace JsSegmentBuilder {
     = node => {
         const id = node.children.Identifier
         
-        const prefix = '$.SKIP('
+        const prefix = 'this.SKIP('
         const segments: JsSegment[] = []
         assert(id && id[0])
         const str = prefix + id[0].image + braceSuffix
@@ -405,10 +405,10 @@ export namespace JsSegmentBuilder {
         const id = node.children.Identifier
         assert(id && id[0])
     
-        const prefix = node.index === undefined? '$.SUBRULE( ': `$.subrule(${node.index}, `
+        const prefix = node.index === undefined? 'this.SUBRULE( ': `this.subrule(${node.index}, `
         const segments: JsSegment[] = []
         segments.push({ node, str: prefix })
-        segments.push({ node, str: id[0].image })
+        segments.push({ node, str: `this.${id[0].image}` })
     
         if (args) {
             assert(args[0])
@@ -500,8 +500,8 @@ export namespace JsSegmentBuilder {
         assert(name && name[0])
         assert(statementList && statementList[0])
     
-        const descriptor = isExposed? 'this.': 'const '
-        const [prefix, suffix] = [`${descriptor}${name[0].image} = $.RULE("${name[0].image}", `, ')']
+        const descriptor = isExposed? 'public ': 'private '
+        const [prefix, suffix] = [`${descriptor}${name[0].image} = this.RULE("${name[0].image}", `, ')']
         const segments = [
             { node, str: prefix }, 
             buildStatementList(statementList[0]),

@@ -3,7 +3,6 @@
  */
 
 import {
-    CstNode,
     CstParser,
     TokenType
 } from "chevrotain";
@@ -32,240 +31,237 @@ import {
 } from "./meta_lexer";
 
 export class MetaParser extends CstParser {
-    readonly Root: (idxInCallingRule ? : number, ...args: any[]) => CstNode
     constructor(tokens: TokenType[]) {
         super(tokens, {
             recoveryEnabled: true
         })
-
-        const $ = this;
-        const ArgumentSep = $.RULE("ArgumentSep", () => {
-            $.consume(0, Semicolon);
-            $.consume(1, Identifier);
-        });
-        const BacktrackPredicate = $.RULE("BacktrackPredicate", () => {
-            $.consume(0, LAngle);
-            $.or(0, [{
-                ALT: () => $.consume(1, Identifier)
-            }, {
-                ALT: () => $.subrule(0, Statement)
-            }, {
-                ALT: () => $.subrule(1, StatementList)
-            }, ]);
-        });
-        const ArgumentGate = $.RULE("ArgumentGate", () => {
-            $.consume(0, RAngle);
-            $.or(0, [{
-                ALT: () => $.consume(1, EscapedString)
-            }, {
-                ALT: () => $.subrule(0, BacktrackPredicate)
-            }, ]);
-        });
-        const ArgumentErr = $.RULE("ArgumentErr", () => {
-            $.consume(0, Exclamation);
-            $.consume(1, EscapedString);
-        });
-        const ArgumentMaxLa = $.RULE("ArgumentMaxLa", () => {
-            $.consume(0, Caret);
-            $.consume(1, EscapedString);
-        });
-        const ArgumentLabel = $.RULE("ArgumentLabel", () => {
-            $.consume(0, At);
-            $.consume(1, EscapedString);
-        });
-        const AtLeastOneArguments = $.RULE("AtLeastOneArguments", () => {
-            $.consume(0, LBrace);
-            $.AT_LEAST_ONE({
-                DEF: () => $.or(0, [{
-                    ALT: () => $.subrule(0, ArgumentSep)
-                }, {
-                    ALT: () => $.subrule(1, ArgumentGate)
-                }, {
-                    ALT: () => $.subrule(2, ArgumentErr)
-                }, {
-                    ALT: () => $.subrule(3, ArgumentMaxLa)
-                }, ])
-            });
-            $.consume(1, RBrace);
-        });
-        const AtLeastOneStatement = $.RULE("AtLeastOneStatement", () => {
-            $.consume(0, OnePlus);
-            $.option(0, () => $.subrule(0, AtLeastOneArguments));
-            $.or(0, [{
-                ALT: () => $.subrule(1, Statement)
-            }, {
-                ALT: () => $.subrule(2, StatementList)
-            }, ]);
-        });
-        const ConsumeArguments = $.RULE("ConsumeArguments", () => {
-            $.consume(0, LBrace);
-            $.AT_LEAST_ONE({
-                DEF: () => $.or(0, [{
-                    ALT: () => $.subrule(0, ArgumentErr)
-                }, {
-                    ALT: () => $.subrule(1, ArgumentLabel)
-                }, ])
-            });
-            $.consume(1, RBrace);
-        });
-        const ConsumeStatement = $.RULE("ConsumeStatement", () => {
-            $.consume(0, Underscore);
-            $.option(0, () => $.subrule(0, ConsumeArguments));
-            $.consume(1, Identifier);
-        });
-        const ManyArguments = $.RULE("ManyArguments", () => {
-            $.consume(0, LBrace);
-            $.AT_LEAST_ONE({
-                DEF: () => $.or(0, [{
-                    ALT: () => $.subrule(0, ArgumentSep)
-                }, {
-                    ALT: () => $.subrule(1, ArgumentGate)
-                }, {
-                    ALT: () => $.subrule(2, ArgumentMaxLa)
-                }, ])
-            });
-            $.consume(1, RBrace);
-        });
-        const ManyStatement = $.RULE("ManyStatement", () => {
-            $.consume(0, ZeroPlus);
-            $.option(0, () => $.subrule(0, ManyArguments));
-            $.or(0, [{
-                ALT: () => $.subrule(1, Statement)
-            }, {
-                ALT: () => $.subrule(2, StatementList)
-            }, ]);
-        });
-        const OptionArguments = $.RULE("OptionArguments", () => {
-            $.consume(0, LBrace);
-            $.AT_LEAST_ONE({
-                DEF: () => $.or(0, [{
-                    ALT: () => $.subrule(0, ArgumentGate)
-                }, {
-                    ALT: () => $.subrule(1, ArgumentMaxLa)
-                }, ])
-            });
-            $.consume(1, RBrace);
-        });
-        const OptionStatement = $.RULE("OptionStatement", () => {
-            $.consume(0, Question);
-            $.option(0, () => $.subrule(0, OptionArguments));
-            $.or(0, [{
-                ALT: () => $.subrule(1, Statement)
-            }, {
-                ALT: () => $.subrule(2, StatementList)
-            }, ]);
-        });
-        const OrAlternativeArguments = $.RULE("OrAlternativeArguments", () => {
-            $.consume(0, LBrace);
-            $.AT_LEAST_ONE({
-                DEF: () => $.or(0, [{
-                    ALT: () => $.subrule(0, ArgumentGate)
-                }, {
-                    ALT: () => $.consume(2, EscapedString)
-                }, ])
-            });
-            $.consume(1, RBrace);
-        });
-        const OrAlternative = $.RULE("OrAlternative", () => {
-            $.consume(0, Backslash);
-            $.option(0, () => $.subrule(0, OrAlternativeArguments));
-            $.or(0, [{
-                ALT: () => $.subrule(1, Statement)
-            }, {
-                ALT: () => $.subrule(2, StatementList)
-            }, ]);
-        });
-        const OrArguments = $.RULE("OrArguments", () => {
-            $.consume(0, LBrace);
-            $.AT_LEAST_ONE({
-                DEF: () => $.or(0, [{
-                    ALT: () => $.subrule(0, ArgumentErr)
-                }, {
-                    ALT: () => $.subrule(1, ArgumentMaxLa)
-                }, {
-                    ALT: () => $.consume(2, EscapedString)
-                }, ])
-            });
-            $.consume(1, RBrace);
-        });
-        const OrStatement = $.RULE("OrStatement", () => {
-            $.consume(0, VBar);
-            $.option(0, () => $.subrule(0, OrArguments));
-            $.AT_LEAST_ONE({
-                DEF: () => $.subrule(1, OrAlternative)
-            });
-        });
-        const SkipStatement = $.RULE("SkipStatement", () => {
-            $.consume(0, Minus);
-            $.consume(1, Identifier);
-        });
-        const SubruleArguments = $.RULE("SubruleArguments", () => {
-            $.consume(0, LBrace);
-            $.AT_LEAST_ONE({
-                DEF: () => $.or(0, [{
-                    ALT: () => $.subrule(0, ArgumentLabel)
-                }, {
-                    ALT: () => $.consume(2, EscapedString)
-                }, ])
-            });
-            $.consume(1, RBrace);
-        });
-        const SubruleStatement = $.RULE("SubruleStatement", () => {
-            $.consume(0, Asterisk);
-            $.option(0, () => $.subrule(0, SubruleArguments));
-            $.consume(1, Identifier);
-        });
-        const Statement = $.RULE("Statement", () => {
-            $.or(0, [{
-                ALT: () => $.subrule(0, AtLeastOneStatement)
-            }, {
-                ALT: () => $.subrule(1, ConsumeStatement)
-            }, {
-                ALT: () => $.subrule(2, ManyStatement)
-            }, {
-                ALT: () => $.subrule(3, OptionStatement)
-            }, {
-                ALT: () => $.subrule(4, OrStatement)
-            }, {
-                ALT: () => $.subrule(5, SkipStatement)
-            }, {
-                ALT: () => $.subrule(6, SubruleStatement)
-            }, {
-                ALT: () => $.consume(0, EscapedString)
-            }, ]);
-        });
-        const StatementList = $.RULE("StatementList", () => {
-            $.consume(0, LCurly);
-            $.MANY({
-                DEF: () => $.subrule(0, Statement)
-            });
-            $.consume(1, RCurly);
-        });
-        const RuleArguments = $.RULE("RuleArguments", () => {
-            $.consume(0, LBrace);
-            $.AT_LEAST_ONE({
-                DEF: () => $.consume(2, EscapedString)
-            });
-            $.consume(1, RBrace);
-        });
-        const RuleStatement = $.RULE("RuleStatement", () => {
-            $.option(0, () => $.consume(1, Equals));
-            $.option(1, () => $.subrule(1, RuleArguments));
-            $.consume(0, Identifier);
-            $.subrule(0, StatementList);
-        });
-        const RootStatement = $.RULE("RootStatement", () => {
-            $.or(0, [{
-                ALT: () => $.subrule(0, RuleStatement)
-            }, {
-                ALT: () => $.consume(0, EscapedString)
-            }, ]);
-        });
-        this.Root = $.RULE("Root", () => {
-            $.MANY({
-                DEF: () => $.subrule(0, RootStatement)
-            });
-        });
         this.performSelfAnalysis();
     }
+    private ArgumentSep = this.RULE("ArgumentSep", () => {
+        this.consume(0, Semicolon);
+        this.consume(1, Identifier);
+    });
+    private BacktrackPredicate = this.RULE("BacktrackPredicate", () => {
+        this.consume(0, LAngle);
+        this.or(0, [{
+            ALT: () => this.consume(1, Identifier)
+        }, {
+            ALT: () => this.subrule(0, this.Statement)
+        }, {
+            ALT: () => this.subrule(1, this.StatementList)
+        }, ]);
+    });
+    private ArgumentGate = this.RULE("ArgumentGate", () => {
+        this.consume(0, RAngle);
+        this.or(0, [{
+            ALT: () => this.consume(1, EscapedString)
+        }, {
+            ALT: () => this.subrule(0, this.BacktrackPredicate)
+        }, ]);
+    });
+    private ArgumentErr = this.RULE("ArgumentErr", () => {
+        this.consume(0, Exclamation);
+        this.consume(1, EscapedString);
+    });
+    private ArgumentMaxLa = this.RULE("ArgumentMaxLa", () => {
+        this.consume(0, Caret);
+        this.consume(1, EscapedString);
+    });
+    private ArgumentLabel = this.RULE("ArgumentLabel", () => {
+        this.consume(0, At);
+        this.consume(1, EscapedString);
+    });
+    private AtLeastOneArguments = this.RULE("AtLeastOneArguments", () => {
+        this.consume(0, LBrace);
+        this.AT_LEAST_ONE({
+            DEF: () => this.or(0, [{
+                ALT: () => this.subrule(0, this.ArgumentSep)
+            }, {
+                ALT: () => this.subrule(1, this.ArgumentGate)
+            }, {
+                ALT: () => this.subrule(2, this.ArgumentErr)
+            }, {
+                ALT: () => this.subrule(3, this.ArgumentMaxLa)
+            }, ])
+        });
+        this.consume(1, RBrace);
+    });
+    private AtLeastOneStatement = this.RULE("AtLeastOneStatement", () => {
+        this.consume(0, OnePlus);
+        this.option(0, () => this.subrule(0, this.AtLeastOneArguments));
+        this.or(0, [{
+            ALT: () => this.subrule(1, this.Statement)
+        }, {
+            ALT: () => this.subrule(2, this.StatementList)
+        }, ]);
+    });
+    private ConsumeArguments = this.RULE("ConsumeArguments", () => {
+        this.consume(0, LBrace);
+        this.AT_LEAST_ONE({
+            DEF: () => this.or(0, [{
+                ALT: () => this.subrule(0, this.ArgumentErr)
+            }, {
+                ALT: () => this.subrule(1, this.ArgumentLabel)
+            }, ])
+        });
+        this.consume(1, RBrace);
+    });
+    private ConsumeStatement = this.RULE("ConsumeStatement", () => {
+        this.consume(0, Underscore);
+        this.option(0, () => this.subrule(0, this.ConsumeArguments));
+        this.consume(1, Identifier);
+    });
+    private ManyArguments = this.RULE("ManyArguments", () => {
+        this.consume(0, LBrace);
+        this.AT_LEAST_ONE({
+            DEF: () => this.or(0, [{
+                ALT: () => this.subrule(0, this.ArgumentSep)
+            }, {
+                ALT: () => this.subrule(1, this.ArgumentGate)
+            }, {
+                ALT: () => this.subrule(2, this.ArgumentMaxLa)
+            }, ])
+        });
+        this.consume(1, RBrace);
+    });
+    private ManyStatement = this.RULE("ManyStatement", () => {
+        this.consume(0, ZeroPlus);
+        this.option(0, () => this.subrule(0, this.ManyArguments));
+        this.or(0, [{
+            ALT: () => this.subrule(1, this.Statement)
+        }, {
+            ALT: () => this.subrule(2, this.StatementList)
+        }, ]);
+    });
+    private OptionArguments = this.RULE("OptionArguments", () => {
+        this.consume(0, LBrace);
+        this.AT_LEAST_ONE({
+            DEF: () => this.or(0, [{
+                ALT: () => this.subrule(0, this.ArgumentGate)
+            }, {
+                ALT: () => this.subrule(1, this.ArgumentMaxLa)
+            }, ])
+        });
+        this.consume(1, RBrace);
+    });
+    private OptionStatement = this.RULE("OptionStatement", () => {
+        this.consume(0, Question);
+        this.option(0, () => this.subrule(0, this.OptionArguments));
+        this.or(0, [{
+            ALT: () => this.subrule(1, this.Statement)
+        }, {
+            ALT: () => this.subrule(2, this.StatementList)
+        }, ]);
+    });
+    private OrAlternativeArguments = this.RULE("OrAlternativeArguments", () => {
+        this.consume(0, LBrace);
+        this.AT_LEAST_ONE({
+            DEF: () => this.or(0, [{
+                ALT: () => this.subrule(0, this.ArgumentGate)
+            }, {
+                ALT: () => this.consume(2, EscapedString)
+            }, ])
+        });
+        this.consume(1, RBrace);
+    });
+    private OrAlternative = this.RULE("OrAlternative", () => {
+        this.consume(0, Backslash);
+        this.option(0, () => this.subrule(0, this.OrAlternativeArguments));
+        this.or(0, [{
+            ALT: () => this.subrule(1, this.Statement)
+        }, {
+            ALT: () => this.subrule(2, this.StatementList)
+        }, ]);
+    });
+    private OrArguments = this.RULE("OrArguments", () => {
+        this.consume(0, LBrace);
+        this.AT_LEAST_ONE({
+            DEF: () => this.or(0, [{
+                ALT: () => this.subrule(0, this.ArgumentErr)
+            }, {
+                ALT: () => this.subrule(1, this.ArgumentMaxLa)
+            }, {
+                ALT: () => this.consume(2, EscapedString)
+            }, ])
+        });
+        this.consume(1, RBrace);
+    });
+    private OrStatement = this.RULE("OrStatement", () => {
+        this.consume(0, VBar);
+        this.option(0, () => this.subrule(0, this.OrArguments));
+        this.AT_LEAST_ONE({
+            DEF: () => this.subrule(1, this.OrAlternative)
+        });
+    });
+    private SkipStatement = this.RULE("SkipStatement", () => {
+        this.consume(0, Minus);
+        this.consume(1, Identifier);
+    });
+    private SubruleArguments = this.RULE("SubruleArguments", () => {
+        this.consume(0, LBrace);
+        this.AT_LEAST_ONE({
+            DEF: () => this.or(0, [{
+                ALT: () => this.subrule(0, this.ArgumentLabel)
+            }, {
+                ALT: () => this.consume(2, EscapedString)
+            }, ])
+        });
+        this.consume(1, RBrace);
+    });
+    private SubruleStatement = this.RULE("SubruleStatement", () => {
+        this.consume(0, Asterisk);
+        this.option(0, () => this.subrule(0, this.SubruleArguments));
+        this.consume(1, Identifier);
+    });
+    private Statement = this.RULE("Statement", () => {
+        this.or(0, [{
+            ALT: () => this.subrule(0, this.AtLeastOneStatement)
+        }, {
+            ALT: () => this.subrule(1, this.ConsumeStatement)
+        }, {
+            ALT: () => this.subrule(2, this.ManyStatement)
+        }, {
+            ALT: () => this.subrule(3, this.OptionStatement)
+        }, {
+            ALT: () => this.subrule(4, this.OrStatement)
+        }, {
+            ALT: () => this.subrule(5, this.SkipStatement)
+        }, {
+            ALT: () => this.subrule(6, this.SubruleStatement)
+        }, {
+            ALT: () => this.consume(0, EscapedString)
+        }, ]);
+    });
+    private StatementList = this.RULE("StatementList", () => {
+        this.consume(0, LCurly);
+        this.MANY({
+            DEF: () => this.subrule(0, this.Statement)
+        });
+        this.consume(1, RCurly);
+    });
+    private RuleArguments = this.RULE("RuleArguments", () => {
+        this.consume(0, LBrace);
+        this.AT_LEAST_ONE({
+            DEF: () => this.consume(2, EscapedString)
+        });
+        this.consume(1, RBrace);
+    });
+    private RuleStatement = this.RULE("RuleStatement", () => {
+        this.option(0, () => this.consume(1, Equals));
+        this.option(1, () => this.subrule(1, this.RuleArguments));
+        this.consume(0, Identifier);
+        this.subrule(0, this.StatementList);
+    });
+    private RootStatement = this.RULE("RootStatement", () => {
+        this.or(0, [{
+            ALT: () => this.subrule(0, this.RuleStatement)
+        }, {
+            ALT: () => this.consume(0, EscapedString)
+        }, ]);
+    });
+    public Root = this.RULE("Root", () => {
+        this.MANY({
+            DEF: () => this.subrule(0, this.RootStatement)
+        });
+    });
 }
