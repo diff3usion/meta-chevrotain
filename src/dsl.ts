@@ -1,10 +1,10 @@
 import { CstElement, CstNode, ILexingResult, IRecognitionException } from 'chevrotain'
 import { js_beautify } from 'js-beautify'
 
-import { ConsumeStatementNode, SubruleStatementNode, StatementNode, RuleStatementNode, RootNode } from './meta_type';
-import { MetaParser } from './meta_parser';
-import { lexer, tokens } from './meta_lexer';
-import { buildRoot } from './meta_js_segment'
+import { ConsumeStatementNode, SubruleStatementNode, StatementNode, RuleStatementNode, RootNode } from './type';
+import { MetaParser } from './parser';
+import { lexer, tokens } from './lexer';
+import { buildRoot } from './code_segment'
 
 export type JsSegment = {
     node        : CstNode

@@ -1,6 +1,31 @@
 #
-import { CstParser, TokenType } from "chevrotain";
-import { Semicolon, Identifier, LAngle, RAngle, EscapedString, Exclamation, Caret, At, LBrace, RBrace, OnePlus, Underscore, ZeroPlus, Question, Backslash, VBar, Minus, Asterisk, LCurly, RCurly, Equals } from "./meta_lexer";
+import {
+    CstParser,
+    TokenType
+} from "chevrotain";
+import {
+    Semicolon,
+    Identifier,
+    LAngle,
+    RAngle,
+    EscapedString,
+    Exclamation,
+    Caret,
+    At,
+    LBrace,
+    RBrace,
+    OnePlus,
+    Underscore,
+    ZeroPlus,
+    Question,
+    Backslash,
+    VBar,
+    Minus,
+    Asterisk,
+    LCurly,
+    RCurly,
+    Equals
+} from "./lexer";
 
 export class MetaParser extends CstParser {
     constructor(tokens: TokenType[]) {

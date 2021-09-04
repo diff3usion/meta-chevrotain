@@ -28,7 +28,7 @@ import {
     LCurly,
     RCurly,
     Equals
-} from "./meta_lexer";
+} from "./lexer";
 
 export class MetaParser extends CstParser {
     constructor(tokens: TokenType[]) {

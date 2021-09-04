@@ -3,11 +3,11 @@
  */
 
 import { CstNode, IToken } from "chevrotain";
-import { ArgumentSepNode, ArgumentErrNode, ArgumentMaxLaNode, BacktrackPredicateNode, ArgumentGateNode, ArgumentLabelNode, AtLeastOneStatementNode, ConsumeStatementNode, ManyStatementNode, OptionStatementNode, OrAlternativeNode, OrStatementNode, SkipStatementNode, SubruleStatementNode, StatementNode, StatementListNode, RuleStatementNode, RootStatementNode, RootNode } from "./meta_type";
+import { ArgumentSepNode, ArgumentErrNode, ArgumentMaxLaNode, BacktrackPredicateNode, ArgumentGateNode, ArgumentLabelNode, AtLeastOneStatementNode, ConsumeStatementNode, ManyStatementNode, OptionStatementNode, OrAlternativeNode, OrStatementNode, SkipStatementNode, SubruleStatementNode, StatementNode, StatementListNode, RuleStatementNode, RootStatementNode, RootNode } from "./type";
 
-export type JsSegment = {
+export type CodeSegment = {
     node: CstNode
-    segments?: JsSegment[]
+    segments?: CodeSegment[]
     str?: string
 }
 
@@ -21,31 +21,31 @@ function assert(value: unknown, msg?: string): asserts value {
 const buildEscapedString: (escaped: IToken) => string
     = escaped => escaped.image.slice(1, -1)
 
-const buildArgumentSep: (node: ArgumentSepNode) => JsSegment
+const buildArgumentSep: (node: ArgumentSepNode) => CodeSegment
     = node => {
         const id = node.children.Identifier
         assert(id && id[0])
 
         const prefix = 'SEP: '
-        const segments: JsSegment[] = []
+        const segments: CodeSegment[] = []
         segments.push({ node, str: prefix })
         segments.push({ node, str: id[0].image })
         return { node, segments }
     }
 
-const buildArgumentErr: (node: ArgumentErrNode) => JsSegment
+const buildArgumentErr: (node: ArgumentErrNode) => CodeSegment
     = node => {
         const escaped = node.children.EscapedString
         assert(escaped && escaped[0])
 
         const prefix = 'ERR_MSG: '
-        const segments: JsSegment[] = []
+        const segments: CodeSegment[] = []
         segments.push({ node, str: prefix })
         segments.push({ node, str: buildEscapedString(escaped[0]) })
         return { node, segments }
     }
 
-const buildArgumentMaxLookAhead: (node: ArgumentMaxLaNode) => JsSegment
+const buildArgumentMaxLookAhead: (node: ArgumentMaxLaNode) => CodeSegment
     = node => {
         const escaped = node.children.EscapedString
         assert(escaped && escaped[0])
@@ -55,14 +55,14 @@ const buildArgumentMaxLookAhead: (node: ArgumentMaxLaNode) => JsSegment
         return { node, str }
     }
 
-const buildBacktrackPredicate: (node: BacktrackPredicateNode) => JsSegment
+const buildBacktrackPredicate: (node: BacktrackPredicateNode) => CodeSegment
     = node => {
         const id = node.children.Identifier
         const statement = node.children.Statement
         const statementList = node.children.StatementList
 
         const prefix = 'this.BACKTRACK('
-        const segments: JsSegment[] = []
+        const segments: CodeSegment[] = []
         segments.push({ node, str: prefix })
         if (id) {
             assert(id[0])
@@ -79,13 +79,13 @@ const buildBacktrackPredicate: (node: BacktrackPredicateNode) => JsSegment
         return { node, segments }
     }
 
-const buildArgumentGate: (node: ArgumentGateNode) => JsSegment
+const buildArgumentGate: (node: ArgumentGateNode) => CodeSegment
     = node => {
         const bp = node.children.BacktrackPredicate
         const escaped = node.children.EscapedString
 
         const prefix = 'GATE: '
-        const segments: JsSegment[] = []
+        const segments: CodeSegment[] = []
         segments.push({ node, str: prefix })
 
         if (bp) {
@@ -99,19 +99,19 @@ const buildArgumentGate: (node: ArgumentGateNode) => JsSegment
         return { node, segments }
     }
 
-const buildArgumentLabel: (node: ArgumentLabelNode) => JsSegment
+const buildArgumentLabel: (node: ArgumentLabelNode) => CodeSegment
     = node => {
         const escaped = node.children.EscapedString
         assert(escaped && escaped[0])
 
         const prefix = 'LABEL: '
-        const segments: JsSegment[] = []
+        const segments: CodeSegment[] = []
         segments.push({ node, str: prefix })
         segments.push({ node, str: buildEscapedString(escaped[0]) })
         return { node, segments }
     }
 
-const buildAtLeastOneStatement: (node: AtLeastOneStatementNode) => JsSegment
+const buildAtLeastOneStatement: (node: AtLeastOneStatementNode) => CodeSegment
     = node => {
         const args = node.children.AtLeastOneArguments
         const statement = node.children.Statement
@@ -120,7 +120,7 @@ const buildAtLeastOneStatement: (node: AtLeastOneStatementNode) => JsSegment
         const functionName = args && args[0] && args[0].children.ArgumentSep ? 'AT_LEAST_ONE_SEP' : 'AT_LEAST_ONE'
         const indexStr = node.index ? `${node.index}` : ''
         const [prefix, suffix] = [`this.${functionName}${indexStr}({ DEF: `, ' })']
-        const segments: JsSegment[] = []
+        const segments: CodeSegment[] = []
 
         segments.push({ node, str: prefix })
 
@@ -138,7 +138,7 @@ const buildAtLeastOneStatement: (node: AtLeastOneStatementNode) => JsSegment
             const gate = args[0].children.ArgumentGate
             const sep = args[0].children.ArgumentSep
             const maxLa = args[0].children.ArgumentMaxLa
-            const argSegments: JsSegment[] = []
+            const argSegments: CodeSegment[] = []
             if (gate && sep)
                 throw new Error("at least one cannot have gate and sep at same time")
             if (gate) {
@@ -168,12 +168,12 @@ const buildAtLeastOneStatement: (node: AtLeastOneStatementNode) => JsSegment
         return { node, segments }
     }
 
-const buildConsumeStatement: (node: ConsumeStatementNode) => JsSegment
+const buildConsumeStatement: (node: ConsumeStatementNode) => CodeSegment
     = node => {
         const args = node.children.ConsumeArguments
         const id = node.children.Identifier
         const prefix = node.index === undefined ? 'this.CONSUME( ' : `this.consume(${node.index}, `
-        const segments: JsSegment[] = []
+        const segments: CodeSegment[] = []
         assert(id && id[0])
         const str = prefix + id[0].image + braceSuffix
         segments.push({ node, str })
@@ -182,7 +182,7 @@ const buildConsumeStatement: (node: ConsumeStatementNode) => JsSegment
             assert(args[0])
             const err = args[0].children.ArgumentErr
             const label = args[0].children.ArgumentLabel
-            const argSegments: JsSegment[] = []
+            const argSegments: CodeSegment[] = []
             if (err) {
                 assert(err[0])
                 argSegments.push({ node: args[0], str: ',' })
@@ -199,7 +199,7 @@ const buildConsumeStatement: (node: ConsumeStatementNode) => JsSegment
         return { node, segments }
     }
 
-const buildManyStatement: (node: ManyStatementNode) => JsSegment
+const buildManyStatement: (node: ManyStatementNode) => CodeSegment
     = node => {
         const args = node.children.ManyArguments
         const statement = node.children.Statement
@@ -207,7 +207,7 @@ const buildManyStatement: (node: ManyStatementNode) => JsSegment
         const functionName = args && args[0] && args[0].children.ArgumentSep ? 'MANY_SEP' : 'MANY'
         const indexStr = node.index ? `${node.index}` : ''
         const [prefix, suffix] = [`this.${functionName}${indexStr}({ DEF: `, ' })']
-        const segments: JsSegment[] = []
+        const segments: CodeSegment[] = []
         segments.push({ node, str: prefix })
 
         if (statementList) {
@@ -223,7 +223,7 @@ const buildManyStatement: (node: ManyStatementNode) => JsSegment
             const gate = args[0].children.ArgumentGate
             const sep = args[0].children.ArgumentSep
             const maxLa = args[0].children.ArgumentMaxLa
-            const argSegments: JsSegment[] = []
+            const argSegments: CodeSegment[] = []
             if (gate && sep)
                 throw new Error("many cannot have gate and sep at same time")
             if (gate) {
@@ -248,13 +248,13 @@ const buildManyStatement: (node: ManyStatementNode) => JsSegment
         return { node, segments }
     }
 
-const buildOptionStatement: (node: OptionStatementNode) => JsSegment
+const buildOptionStatement: (node: OptionStatementNode) => CodeSegment
     = node => {
         const args = node.children.OptionArguments
         const statement = node.children.Statement
         const statementList = node.children.StatementList
         const prefix = node.index === undefined ? 'this.OPTION( ' : `this.option(${node.index}, `
-        const segments: JsSegment[] = []
+        const segments: CodeSegment[] = []
         segments.push({ node, str: prefix })
 
         const buildContent = () => {
@@ -271,7 +271,7 @@ const buildOptionStatement: (node: OptionStatementNode) => JsSegment
             const gate = args[0].children.ArgumentGate
             const maxLa = args[0].children.ArgumentMaxLa
             const [argsPrefix, argsSuffix] = ['{ DEF: ', ' }']
-            const argSegments: JsSegment[] = []
+            const argSegments: CodeSegment[] = []
             segments.push({ node, str: argsPrefix })
             buildContent()
             if (gate) {
@@ -294,13 +294,13 @@ const buildOptionStatement: (node: OptionStatementNode) => JsSegment
         return { node, segments }
     }
 
-const buildOrAlternative: (node: OrAlternativeNode) => JsSegment
+const buildOrAlternative: (node: OrAlternativeNode) => CodeSegment
     = node => {
         const args = node.children.OrAlternativeArguments
         const statement = node.children.Statement
         const statementList = node.children.StatementList
         const [prefix, suffix] = ['{ ALT: ', ' }']
-        const segments: JsSegment[] = []
+        const segments: CodeSegment[] = []
         segments.push({ node, str: prefix })
 
         if (statementList) {
@@ -315,7 +315,7 @@ const buildOrAlternative: (node: OrAlternativeNode) => JsSegment
             assert(args[0])
             const gate = args[0].children.ArgumentGate
             const escaped = args[0].children.EscapedString
-            const argSegments: JsSegment[] = []
+            const argSegments: CodeSegment[] = []
             if (gate) {
                 assert(gate[0])
                 argSegments.push({ node: args[0], str: ',' })
@@ -333,13 +333,13 @@ const buildOrAlternative: (node: OrAlternativeNode) => JsSegment
         return { node, segments }
     }
 
-const buildOrStatement: (node: OrStatementNode) => JsSegment
+const buildOrStatement: (node: OrStatementNode) => CodeSegment
     = node => {
         const args = node.children.OrArguments
         const alternatives = node.children.OrAlternative
         const prefix = node.index === undefined ? 'this.OR([ ' : `this.or(${node.index}, [`
         const suffix = ' ])'
-        const segments: JsSegment[] = []
+        const segments: CodeSegment[] = []
         segments.push({ node, str: prefix })
 
         const buildContent = () => {
@@ -355,7 +355,7 @@ const buildOrStatement: (node: OrStatementNode) => JsSegment
             const maxLa = args[0].children.ArgumentMaxLa
             const escaped = args[0].children.EscapedString
             const [argsPrefix, argsSuffix] = ['{ DEF: ', ' }']
-            const argSegments: JsSegment[] = []
+            const argSegments: CodeSegment[] = []
 
             segments.push({ node, str: argsPrefix })
             buildContent()
@@ -384,12 +384,12 @@ const buildOrStatement: (node: OrStatementNode) => JsSegment
         return { node, segments }
     }
 
-const buildSkipStatement: (node: SkipStatementNode) => JsSegment
+const buildSkipStatement: (node: SkipStatementNode) => CodeSegment
     = node => {
         const id = node.children.Identifier
 
         const prefix = 'this.SKIP('
-        const segments: JsSegment[] = []
+        const segments: CodeSegment[] = []
         assert(id && id[0])
         const str = prefix + id[0].image + braceSuffix
         segments.push({ node, str })
@@ -398,14 +398,14 @@ const buildSkipStatement: (node: SkipStatementNode) => JsSegment
         return { node, segments }
     }
 
-const buildSubruleStatement: (node: SubruleStatementNode) => JsSegment
+const buildSubruleStatement: (node: SubruleStatementNode) => CodeSegment
     = node => {
         const args = node.children.SubruleArguments
         const id = node.children.Identifier
         assert(id && id[0])
 
         const prefix = node.index === undefined ? 'this.SUBRULE( ' : `this.subrule(${node.index}, `
-        const segments: JsSegment[] = []
+        const segments: CodeSegment[] = []
         segments.push({ node, str: prefix })
         segments.push({ node, str: `this.${id[0].image}` })
 
@@ -414,7 +414,7 @@ const buildSubruleStatement: (node: SubruleStatementNode) => JsSegment
             const label = args[0].children.ArgumentLabel
 
             const [argsPrefix, argsSuffix] = ['{', '}']
-            const argSegments: JsSegment[] = []
+            const argSegments: CodeSegment[] = []
             argSegments.push({ node: args[0], str: argsPrefix })
             if (label) {
                 assert(label[0])
@@ -429,7 +429,7 @@ const buildSubruleStatement: (node: SubruleStatementNode) => JsSegment
         return { node, segments }
     }
 
-const buildStatement: (node: StatementNode) => JsSegment
+const buildStatement: (node: StatementNode) => CodeSegment
     = node => {
         const atLeastOne = node.children.AtLeastOneStatement
         const consume = node.children.ConsumeStatement
@@ -466,22 +466,22 @@ const buildStatement: (node: StatementNode) => JsSegment
         return { node, str: buildEscapedString(escaped[0]) }
     }
 
-const buildStatementAsBlock: (node: StatementNode) => JsSegment
+const buildStatementAsBlock: (node: StatementNode) => CodeSegment
     = node => {
-        const segments: JsSegment[] = []
+        const segments: CodeSegment[] = []
         const statementPrefix = '() => '
         segments.push({ node, str: statementPrefix })
         segments.push(buildStatement(node))
         return { node, segments }
     }
 
-const buildStatementList: (node: StatementListNode) => JsSegment
+const buildStatementList: (node: StatementListNode) => CodeSegment
     = node => {
         const statement = node.children.Statement
         assert(statement)
 
         const [prefix, suffix] = ['() => {', '}']
-        const segments: JsSegment[] = []
+        const segments: CodeSegment[] = []
         segments.push({ node, str: prefix })
         statement.forEach(s => {
             segments.push(buildStatement(s))
@@ -491,7 +491,7 @@ const buildStatementList: (node: StatementListNode) => JsSegment
         return { node, segments }
     }
 
-const buildRuleStatement: (node: RuleStatementNode) => JsSegment
+const buildRuleStatement: (node: RuleStatementNode) => CodeSegment
     = node => {
         const isExposed = node.children.Equals && node.children.Equals[0]
         const name = node.children.Identifier
@@ -509,7 +509,7 @@ const buildRuleStatement: (node: RuleStatementNode) => JsSegment
         return { node, segments }
     }
 
-const buildRootStatement: (node: RootStatementNode) => JsSegment
+const buildRootStatement: (node: RootStatementNode) => CodeSegment
     = node => {
         const rule = node.children.RuleStatement
         const escaped = node.children.EscapedString
@@ -521,10 +521,10 @@ const buildRootStatement: (node: RootStatementNode) => JsSegment
         return { node, str: buildEscapedString(escaped[0]) }
     }
 
-export const buildRoot: (node: RootNode) => JsSegment
+export const buildRoot: (node: RootNode) => CodeSegment
     = node => {
         const root = node.children.RootStatement
-        const segments: JsSegment[] = []
+        const segments: CodeSegment[] = []
         if (root) {
             root.forEach(s => {
                 segments.push(buildRootStatement(s))
