@@ -1,3 +1,4 @@
+[![npm](https://img.shields.io/npm/v/meta-chevrotain.svg )](https://www.npmjs.com/package/meta-chevrotain)
 # meta-chevrotain
   DSL for generating [chevrotain](https://github.com/Chevrotain/chevrotain) parser code and cst typing
 
