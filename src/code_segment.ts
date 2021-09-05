@@ -3,7 +3,7 @@
  */
 
 import { CstNode, IToken } from "chevrotain";
-import { ArgumentSepNode, ArgumentErrNode, ArgumentMaxLaNode, BacktrackPredicateNode, ArgumentGateNode, ArgumentLabelNode, AtLeastOneStatementNode, ConsumeStatementNode, ManyStatementNode, OptionStatementNode, OrAlternativeNode, OrStatementNode, SkipStatementNode, SubruleStatementNode, StatementNode, StatementListNode, RuleStatementNode, RootStatementNode, RootNode } from "./type";
+import { ArgumentSepNode, ArgumentErrNode, ArgumentMaxLaNode, BacktrackPredicateNode, ArgumentGateNode, ArgumentLabelNode, AtLeastOneStatementNode, ConsumeStatementNode, ManyStatementNode, OptionStatementNode, OrAlternativeNode, OrStatementNode, SkipStatementNode, SubruleStatementNode, StatementNode, StatementListNode, RuleStatementNode, RootStatementNode, RootNode, OptionArgumentsNode, AtLeastOneArgumentsNode, ConsumeArgumentsNode, ManyArgumentsNode, OrAlternativeArgumentsNode, OrArgumentsNode, SubruleArgumentsNode } from "./type";
 
 export type CodeSegment = {
     node: CstNode
@@ -11,89 +11,147 @@ export type CodeSegment = {
     str?: string
 }
 
-const braceSuffix = ' )'
+function assertDefined(value: unknown, msg?: string): asserts value {
+    if (value === undefined)
+        throw new Error(`Unexpected undefined occurs${msg ? `: ${msg}` : ''}`);
+}
 
-function assert(value: unknown, msg?: string): asserts value {
-    if (!value)
-        throw new Error('Parsed CST has invalid format' + msg ? `: ${msg}` : '');
+function assertNonEmpty(value: any[] | undefined, msg?: string): asserts value {
+    assertDefined(value && value[0], msg)
 }
 
 const buildEscapedString: (escaped: IToken) => string
     = escaped => escaped.image.slice(1, -1)
 
+interface ArgumentsNode {
+    name: string
+    children: {
+        ArgumentSep?: ArgumentSepNode[]
+        ArgumentErr?: ArgumentErrNode[]
+        ArgumentMaxLa?: ArgumentMaxLaNode[]
+        ArgumentGate?: ArgumentGateNode[]
+        ArgumentLabel?: ArgumentLabelNode[]
+    }
+    index?: number
+}
+
+const buildArguments: (node: ArgumentsNode) => CodeSegment
+    = (node) => {
+        const { ArgumentSep, ArgumentErr, ArgumentMaxLa, ArgumentGate, ArgumentLabel } = node.children
+
+        const segments: CodeSegment[] = []
+        if (ArgumentSep) {
+            assertDefined(ArgumentSep[0])
+            segments.push(
+                { node, str: ',' },
+                buildArgumentSep(ArgumentSep[0]),
+            )
+        }
+        if (ArgumentErr) {
+            assertDefined(ArgumentErr[0])
+            segments.push(
+                { node, str: ',' },
+                buildArgumentErr(ArgumentErr[0]),
+            )
+        }
+        if (ArgumentMaxLa) {
+            assertDefined(ArgumentMaxLa[0])
+            segments.push(
+                { node, str: ',' },
+                buildArgumentMaxLookAhead(ArgumentMaxLa[0]),
+            )
+        }
+        if (ArgumentGate) {
+            assertDefined(ArgumentGate[0])
+            segments.push(
+                { node, str: ',' },
+                buildArgumentGate(ArgumentGate[0]),
+            )
+        }
+        if (ArgumentLabel) {
+            assertDefined(ArgumentLabel[0])
+            segments.push(
+                { node, str: ',' },
+                buildArgumentLabel(ArgumentLabel[0]),
+            )
+        }
+
+        return { node, segments }
+    }
+
+interface ContentNode {
+    name: string
+    children: {
+        Statement?: StatementNode[]
+        StatementList?: StatementListNode[]
+    }
+    index?: number
+}
+const buildContent = (node: ContentNode) => {
+    const { Statement, StatementList } = node.children
+    if (StatementList) {
+        assertDefined(StatementList[0])
+        return buildStatementList(StatementList[0])
+    } else {
+        assertDefined(Statement && Statement[0])
+        return buildStatementAsBlock(Statement[0])
+    }
+}
+
+//#region Arguments
 const buildArgumentSep: (node: ArgumentSepNode) => CodeSegment
     = node => {
-        const id = node.children.Identifier
-        assert(id && id[0])
-
+        const { Identifier } = node.children
+        assertNonEmpty(Identifier)
         const prefix = 'SEP: '
-        const segments: CodeSegment[] = []
-        segments.push({ node, str: prefix })
-        segments.push({ node, str: id[0].image })
+
+        const segments: CodeSegment[] = [
+            { node, str: prefix },
+            { node, str: Identifier[0].image },
+        ]
         return { node, segments }
     }
 
 const buildArgumentErr: (node: ArgumentErrNode) => CodeSegment
     = node => {
-        const escaped = node.children.EscapedString
-        assert(escaped && escaped[0])
-
+        const { EscapedString } = node.children
+        assertNonEmpty(EscapedString)
         const prefix = 'ERR_MSG: '
-        const segments: CodeSegment[] = []
-        segments.push({ node, str: prefix })
-        segments.push({ node, str: buildEscapedString(escaped[0]) })
+
+        const segments: CodeSegment[] = [
+            { node, str: prefix },
+            { node, str: buildEscapedString(EscapedString[0]) },
+        ]
         return { node, segments }
     }
 
 const buildArgumentMaxLookAhead: (node: ArgumentMaxLaNode) => CodeSegment
     = node => {
-        const escaped = node.children.EscapedString
-        assert(escaped && escaped[0])
-
+        const { EscapedString } = node.children
+        assertNonEmpty(EscapedString)
         const prefix = 'MAX_LOOKAHEAD: '
-        const str = prefix + buildEscapedString(escaped[0])
-        return { node, str }
-    }
 
-const buildBacktrackPredicate: (node: BacktrackPredicateNode) => CodeSegment
-    = node => {
-        const id = node.children.Identifier
-        const statement = node.children.Statement
-        const statementList = node.children.StatementList
-
-        const prefix = 'this.BACKTRACK('
-        const segments: CodeSegment[] = []
-        segments.push({ node, str: prefix })
-        if (id) {
-            assert(id[0])
-            const str = prefix + "this." + id[0].image + braceSuffix
-            return { node, str }
-        } else if (statementList) {
-            assert(statementList[0])
-            segments.push(buildStatementList(statementList[0]))
-        } else {
-            assert(statement && statement[0])
-            segments.push(buildStatementAsBlock(statement[0]))
-        }
-        segments.push({ node, str: braceSuffix })
+        const segments: CodeSegment[] = [
+            { node, str: prefix },
+            { node, str: buildEscapedString(EscapedString[0]) },
+        ]
         return { node, segments }
     }
 
 const buildArgumentGate: (node: ArgumentGateNode) => CodeSegment
     = node => {
-        const bp = node.children.BacktrackPredicate
-        const escaped = node.children.EscapedString
-
+        const { BacktrackPredicate, EscapedString } = node.children
         const prefix = 'GATE: '
-        const segments: CodeSegment[] = []
-        segments.push({ node, str: prefix })
+        const segments: CodeSegment[] = [
+            { node, str: prefix }
+        ]
 
-        if (bp) {
-            assert(bp && bp[0])
-            segments.push(buildBacktrackPredicate(bp[0]))
+        if (BacktrackPredicate) {
+            assertDefined(BacktrackPredicate[0])
+            segments.push(buildBacktrackPredicate(BacktrackPredicate[0]))
         } else {
-            assert(escaped && escaped[0])
-            segments.push({ node, str: buildEscapedString(escaped[0]) })
+            assertNonEmpty(EscapedString)
+            segments.push({ node, str: buildEscapedString(EscapedString[0]) })
         }
 
         return { node, segments }
@@ -101,409 +159,336 @@ const buildArgumentGate: (node: ArgumentGateNode) => CodeSegment
 
 const buildArgumentLabel: (node: ArgumentLabelNode) => CodeSegment
     = node => {
-        const escaped = node.children.EscapedString
-        assert(escaped && escaped[0])
-
         const prefix = 'LABEL: '
-        const segments: CodeSegment[] = []
-        segments.push({ node, str: prefix })
-        segments.push({ node, str: buildEscapedString(escaped[0]) })
+        const escaped = node.children.EscapedString
+        assertNonEmpty(escaped)
+
+        const segments: CodeSegment[] = [
+            { node, str: prefix },
+            { node, str: buildEscapedString(escaped[0]) },
+        ]
         return { node, segments }
     }
+//#endregion
 
+//#region BacktrackPredicate
+const buildBacktrackPredicate: (node: BacktrackPredicateNode) => CodeSegment
+    = node => {
+        const { Identifier, Statement, StatementList } = node.children
+        const [prefix, suffix] = ['this.BACKTRACK(', ')']
+
+        if (Identifier) {
+            assertDefined(Identifier[0])
+            const segments: CodeSegment[] = [
+                { node, str: prefix },
+                { node, str: 'this.' },
+                { node, str: Identifier[0].image },
+                { node, str: suffix },
+            ]
+            return { node, segments }
+        }
+
+        const segments: CodeSegment[] = [{ node, str: prefix }]
+        if (StatementList) {
+            assertDefined(StatementList[0])
+            segments.push(buildStatementList(StatementList[0]))
+        } else {
+            assertNonEmpty(Statement)
+            segments.push(buildStatementAsBlock(Statement[0]))
+        }
+        segments.push({ node, str: suffix })
+        return { node, segments }
+    }
+//#endregion
+
+//#region AtLeastOne
 const buildAtLeastOneStatement: (node: AtLeastOneStatementNode) => CodeSegment
     = node => {
-        const args = node.children.AtLeastOneArguments
-        const statement = node.children.Statement
-        const statementList = node.children.StatementList
-
-        const functionName = args && args[0] && args[0].children.ArgumentSep ? 'AT_LEAST_ONE_SEP' : 'AT_LEAST_ONE'
+        const { AtLeastOneArguments, Statement, StatementList } = node.children
+        const isAtLeastOneVariant = AtLeastOneArguments && AtLeastOneArguments[0] && AtLeastOneArguments[0].children.ArgumentSep
+        const functionName = isAtLeastOneVariant ? 'AT_LEAST_ONE_SEP' : 'AT_LEAST_ONE'
         const indexStr = node.index ? `${node.index}` : ''
         const [prefix, suffix] = [`this.${functionName}${indexStr}({ DEF: `, ' })']
-        const segments: CodeSegment[] = []
+        const segments: CodeSegment[] = [
+            { node, str: prefix },
+            buildContent(node),
+        ]
 
-        segments.push({ node, str: prefix })
-
-        if (statementList) {
-            assert(statementList[0])
-            segments.push(buildStatementList(statementList[0]))
-        } else {
-            assert(statement && statement[0])
-            segments.push(buildStatementAsBlock(statement[0]))
-        }
-
-        if (args) {
-            assert(args[0])
-            const err = args[0].children.ArgumentErr
-            const gate = args[0].children.ArgumentGate
-            const sep = args[0].children.ArgumentSep
-            const maxLa = args[0].children.ArgumentMaxLa
-            const argSegments: CodeSegment[] = []
-            if (gate && sep)
-                throw new Error("at least one cannot have gate and sep at same time")
-            if (gate) {
-                assert(gate[0])
-                argSegments.push({ node: args[0], str: ',' })
-                argSegments.push(buildArgumentGate(gate[0]))
-            } else if (sep) {
-                assert(sep[0])
-                argSegments.push({ node: args[0], str: ',' })
-                argSegments.push(buildArgumentSep(sep[0]))
-            }
-            if (err) {
-                assert(err[0])
-                argSegments.push({ node: args[0], str: ',' })
-                argSegments.push(buildArgumentErr(err[0]))
-            }
-            if (maxLa) {
-                assert(maxLa[0])
-                argSegments.push({ node: args[0], str: ',' })
-                argSegments.push(buildArgumentMaxLookAhead(maxLa[0]))
-            }
-            segments.push({ node: args[0], segments: argSegments })
+        if (AtLeastOneArguments) {
+            assertDefined(AtLeastOneArguments[0])
+            const { ArgumentGate, ArgumentSep } = AtLeastOneArguments[0].children
+            if (ArgumentGate && ArgumentSep)
+                throw new Error("AtLeastOneStatementNode cannot have gate and sep at same time")
+            segments.push(buildArguments(AtLeastOneArguments[0]))
         }
 
         segments.push({ node, str: suffix })
-
         return { node, segments }
     }
+//#endregion
 
+//#region Consume
 const buildConsumeStatement: (node: ConsumeStatementNode) => CodeSegment
     = node => {
-        const args = node.children.ConsumeArguments
-        const id = node.children.Identifier
-        const prefix = node.index === undefined ? 'this.CONSUME( ' : `this.consume(${node.index}, `
-        const segments: CodeSegment[] = []
-        assert(id && id[0])
-        const str = prefix + id[0].image + braceSuffix
-        segments.push({ node, str })
+        const { ConsumeArguments, Identifier } = node.children
+        assertNonEmpty(Identifier)
+        const [prefix, suffix] = [node.index === undefined ? 'this.CONSUME( ' : `this.consume(${node.index}, `, ')']
+        const segments: CodeSegment[] = [
+            { node, str: prefix },
+            { node, str: Identifier[0].image },
+        ]
 
-        if (args) {
-            assert(args[0])
-            const err = args[0].children.ArgumentErr
-            const label = args[0].children.ArgumentLabel
-            const argSegments: CodeSegment[] = []
-            if (err) {
-                assert(err[0])
-                argSegments.push({ node: args[0], str: ',' })
-                argSegments.push(buildArgumentErr(err[0]))
-            }
-            if (label) {
-                assert(label[0])
-                argSegments.push({ node: args[0], str: ',' })
-                argSegments.push(buildArgumentLabel(label[0]))
-            }
-            segments.push({ node: args[0], segments: argSegments })
+        if (ConsumeArguments) {
+            assertDefined(ConsumeArguments[0])
+            segments.push(buildArguments(ConsumeArguments[0]))
         }
 
+        segments.push({ node, str: suffix })
         return { node, segments }
     }
+//#endregion
 
+//#region Many
 const buildManyStatement: (node: ManyStatementNode) => CodeSegment
     = node => {
-        const args = node.children.ManyArguments
-        const statement = node.children.Statement
-        const statementList = node.children.StatementList
-        const functionName = args && args[0] && args[0].children.ArgumentSep ? 'MANY_SEP' : 'MANY'
+        const { ManyArguments, Statement, StatementList } = node.children
+        const functionName = ManyArguments && ManyArguments[0] && ManyArguments[0].children.ArgumentSep ? 'MANY_SEP' : 'MANY'
         const indexStr = node.index ? `${node.index}` : ''
         const [prefix, suffix] = [`this.${functionName}${indexStr}({ DEF: `, ' })']
-        const segments: CodeSegment[] = []
-        segments.push({ node, str: prefix })
+        const segments: CodeSegment[] = [
+            { node, str: prefix },
+            buildContent(node),
+        ]
 
-        if (statementList) {
-            assert(statementList[0])
-            segments.push(buildStatementList(statementList[0]))
-        } else {
-            assert(statement && statement[0])
-            segments.push(buildStatementAsBlock(statement[0]))
-        }
-
-        if (args) {
-            assert(args[0])
-            const gate = args[0].children.ArgumentGate
-            const sep = args[0].children.ArgumentSep
-            const maxLa = args[0].children.ArgumentMaxLa
-            const argSegments: CodeSegment[] = []
-            if (gate && sep)
-                throw new Error("many cannot have gate and sep at same time")
-            if (gate) {
-                assert(gate[0])
-                argSegments.push({ node: args[0], str: ',' })
-                argSegments.push(buildArgumentGate(gate[0]))
-            } else if (sep) {
-                assert(sep[0])
-                argSegments.push({ node: args[0], str: ',' })
-                argSegments.push(buildArgumentSep(sep[0]))
-            }
-            if (maxLa) {
-                assert(maxLa[0])
-                argSegments.push({ node: args[0], str: ',' })
-                argSegments.push(buildArgumentMaxLookAhead(maxLa[0]))
-            }
-            segments.push({ node: args[0], segments: argSegments })
+        if (ManyArguments) {
+            assertDefined(ManyArguments[0])
+            const { ArgumentGate, ArgumentSep } = ManyArguments[0].children
+            if (ArgumentGate && ArgumentSep)
+                throw new Error("ManyStatementNode cannot have gate and sep at same time")
+            segments.push(buildArguments(ManyArguments[0]))
         }
 
         segments.push({ node, str: suffix })
-
         return { node, segments }
     }
+//#endregion
 
+//#region Option
 const buildOptionStatement: (node: OptionStatementNode) => CodeSegment
     = node => {
-        const args = node.children.OptionArguments
-        const statement = node.children.Statement
-        const statementList = node.children.StatementList
-        const prefix = node.index === undefined ? 'this.OPTION( ' : `this.option(${node.index}, `
-        const segments: CodeSegment[] = []
-        segments.push({ node, str: prefix })
+        const { OptionArguments, Statement, StatementList } = node.children
+        const [prefix, suffix] = [node.index === undefined ? 'this.OPTION( ' : `this.option(${node.index}, `, ')']
+        const segments: CodeSegment[] = [
+            { node, str: prefix }
+        ]
 
-        const buildContent = () => {
-            if (statementList) {
-                assert(statementList[0])
-                segments.push(buildStatementList(statementList[0]))
-            } else {
-                assert(statement && statement[0])
-                segments.push(buildStatementAsBlock(statement[0]))
-            }
-        }
-        if (args) {
-            assert(args[0])
-            const gate = args[0].children.ArgumentGate
-            const maxLa = args[0].children.ArgumentMaxLa
+        if (OptionArguments) {
+            assertDefined(OptionArguments[0])
             const [argsPrefix, argsSuffix] = ['{ DEF: ', ' }']
-            const argSegments: CodeSegment[] = []
-            segments.push({ node, str: argsPrefix })
-            buildContent()
-            if (gate) {
-                assert(gate[0])
-                argSegments.push({ node: args[0], str: ',' })
-                argSegments.push(buildArgumentGate(gate[0]))
-            }
-            if (maxLa) {
-                assert(maxLa[0])
-                argSegments.push({ node: args[0], str: ',' })
-                argSegments.push(buildArgumentMaxLookAhead(maxLa[0]))
-            }
-            segments.push({ node: args[0], segments: argSegments })
-            segments.push({ node: node, str: argsSuffix })
+            segments.push(
+                { node, str: argsPrefix },
+                buildContent(node),
+                buildArguments(OptionArguments[0]),
+                { node, str: argsSuffix },
+            )
         } else {
-            buildContent()
+            segments.push(buildContent(node))
         }
 
-        segments.push({ node, str: braceSuffix })
+        segments.push({ node, str: suffix })
         return { node, segments }
     }
+//#endregion
 
+//#region OrAlternative
 const buildOrAlternative: (node: OrAlternativeNode) => CodeSegment
     = node => {
-        const args = node.children.OrAlternativeArguments
-        const statement = node.children.Statement
-        const statementList = node.children.StatementList
+        const { OrAlternativeArguments, Statement, StatementList } = node.children
         const [prefix, suffix] = ['{ ALT: ', ' }']
-        const segments: CodeSegment[] = []
-        segments.push({ node, str: prefix })
+        const segments: CodeSegment[] = [
+            { node, str: prefix },
+            buildContent(node),
+        ]
 
-        if (statementList) {
-            assert(statementList[0])
-            segments.push(buildStatementList(statementList[0]))
-        } else {
-            assert(statement && statement[0])
-            segments.push(buildStatementAsBlock(statement[0]))
-        }
-
-        if (args) {
-            assert(args[0])
-            const gate = args[0].children.ArgumentGate
-            const escaped = args[0].children.EscapedString
-            const argSegments: CodeSegment[] = []
-            if (gate) {
-                assert(gate[0])
-                argSegments.push({ node: args[0], str: ',' })
-                argSegments.push(buildArgumentGate(gate[0]))
-            }
-            if (escaped) {
-                assert(escaped[0])
-                argSegments.push({ node: args[0], str: ',' })
-                argSegments.push({ node: args[0], str: buildEscapedString(escaped[0]) })
-            }
-            segments.push({ node: args[0], segments: argSegments })
+        if (OrAlternativeArguments) {
+            assertDefined(OrAlternativeArguments[0])
+            segments.push(buildArguments(OrAlternativeArguments[0]))
         }
 
         segments.push({ node, str: suffix })
         return { node, segments }
     }
+//#endregion
 
+//#region Or
 const buildOrStatement: (node: OrStatementNode) => CodeSegment
     = node => {
-        const args = node.children.OrArguments
-        const alternatives = node.children.OrAlternative
-        const prefix = node.index === undefined ? 'this.OR([ ' : `this.or(${node.index}, [`
-        const suffix = ' ])'
-        const segments: CodeSegment[] = []
-        segments.push({ node, str: prefix })
+        const { OrArguments, OrAlternative } = node.children
+        const [prefix, suffix] = [node.index === undefined ? 'this.OR([ ' : `this.or(${node.index}, [`, ' ])']
+        const segments: CodeSegment[] = [
+            { node, str: prefix }
+        ]
 
-        const buildContent = () => {
-            assert(alternatives && alternatives[0])
-            alternatives.map(a => buildOrAlternative(a)).forEach(altStr => {
-                segments.push(altStr)
-                segments.push({ node, str: ',' })
-            })
+        const buildOrContent = () => {
+            assertNonEmpty(OrAlternative)
+            return OrAlternative.map(a => buildOrAlternative(a)).flatMap(seg => [
+                seg,
+                { node, str: ',' }
+            ])
         }
-        if (args) {
-            assert(args[0])
-            const err = args[0].children.ArgumentErr
-            const maxLa = args[0].children.ArgumentMaxLa
-            const escaped = args[0].children.EscapedString
-            const [argsPrefix, argsSuffix] = ['{ DEF: ', ' }']
-            const argSegments: CodeSegment[] = []
 
-            segments.push({ node, str: argsPrefix })
-            buildContent()
-            if (err) {
-                assert(err[0])
-                argSegments.push({ node: args[0], str: ',' })
-                argSegments.push(buildArgumentErr(err[0]))
-            }
-            if (maxLa) {
-                assert(maxLa[0])
-                argSegments.push({ node: args[0], str: ',' })
-                argSegments.push(buildArgumentMaxLookAhead(maxLa[0]))
-            }
-            if (escaped) {
-                assert(escaped[0])
-                argSegments.push({ node: args[0], str: ',' })
-                argSegments.push({ node: args[0], str: buildEscapedString(escaped[0]) })
-            }
-            segments.push({ node: args[0], segments: argSegments })
-            segments.push({ node: node, str: argsSuffix })
+        if (OrArguments) {
+            assertDefined(OrArguments[0])
+            const [argsPrefix, argsSuffix] = ['{ DEF: ', ' }']
+            segments.push(
+                { node, str: argsPrefix },
+                ...buildOrContent(),
+                buildArguments(OrArguments[0]),
+                { node: node, str: argsSuffix },
+            )
         } else {
-            buildContent()
+            segments.push(...buildOrContent())
         }
 
         segments.push({ node, str: suffix })
         return { node, segments }
     }
+//#endregion
 
+//#region Skip
 const buildSkipStatement: (node: SkipStatementNode) => CodeSegment
     = node => {
-        const id = node.children.Identifier
+        const { Identifier } = node.children
+        assertNonEmpty(Identifier)
+        const [prefix, suffix] = ['this.SKIP(', ')']
+        const segments: CodeSegment[] = [
+            { node, str: prefix },
+            { node, str: Identifier[0].image },
+            { node, str: suffix }
+        ]
 
-        const prefix = 'this.SKIP('
-        const segments: CodeSegment[] = []
-        assert(id && id[0])
-        const str = prefix + id[0].image + braceSuffix
-        segments.push({ node, str })
-
-        segments.push({ node, str: braceSuffix })
         return { node, segments }
     }
+//#endregion
 
-const buildSubruleStatement: (node: SubruleStatementNode) => CodeSegment
+//#region Subrule
+const buildSubruleArguments: (node: SubruleArgumentsNode) => CodeSegment
     = node => {
-        const args = node.children.SubruleArguments
-        const id = node.children.Identifier
-        assert(id && id[0])
+        const { ArgumentLabel } = node.children
+        const [prefix, suffix] = ['{', '}']
+        const segments: CodeSegment[] = [
+            { node, str: prefix },
+        ]
 
-        const prefix = node.index === undefined ? 'this.SUBRULE( ' : `this.subrule(${node.index}, `
-        const segments: CodeSegment[] = []
-        segments.push({ node, str: prefix })
-        segments.push({ node, str: `this.${id[0].image}` })
-
-        if (args) {
-            assert(args[0])
-            const label = args[0].children.ArgumentLabel
-
-            const [argsPrefix, argsSuffix] = ['{', '}']
-            const argSegments: CodeSegment[] = []
-            argSegments.push({ node: args[0], str: argsPrefix })
-            if (label) {
-                assert(label[0])
-                argSegments.push({ node: args[0], str: ',' })
-                argSegments.push(buildArgumentLabel(label[0]))
-            }
-            argSegments.push({ node: args[0], str: argsSuffix })
-            segments.push({ node: args[0], segments: argSegments })
+        if (ArgumentLabel) {
+            assertDefined(ArgumentLabel[0])
+            segments.push({ node, str: ',' })
+            segments.push(buildArgumentLabel(ArgumentLabel[0]))
         }
 
-        segments.push({ node, str: braceSuffix })
+        segments.push({ node, str: suffix })
         return { node, segments }
     }
+const buildSubruleStatement: (node: SubruleStatementNode) => CodeSegment
+    = node => {
+        const { SubruleArguments, Identifier } = node.children
+        assertNonEmpty(Identifier)
+        const [prefix, suffix] = [node.index === undefined ? 'this.SUBRULE( ' : `this.subrule(${node.index}, `, ')']
+        const segments: CodeSegment[] = [
+            { node, str: prefix },
+            { node, str: `this.${Identifier[0].image}` },
+        ]
+
+        if (SubruleArguments) {
+            assertDefined(SubruleArguments[0])
+            segments.push(buildSubruleArguments(SubruleArguments[0]))
+        }
+
+        segments.push({ node, str: suffix })
+        return { node, segments }
+    }
+//#endregion
 
 const buildStatement: (node: StatementNode) => CodeSegment
     = node => {
-        const atLeastOne = node.children.AtLeastOneStatement
-        const consume = node.children.ConsumeStatement
-        const many = node.children.ManyStatement
-        const option = node.children.OptionStatement
-        const or = node.children.OrStatement
-        const skip = node.children.SkipStatement
-        const subrule = node.children.SubruleStatement
-        const escaped = node.children.EscapedString
+        const {
+            AtLeastOneStatement,
+            ConsumeStatement,
+            ManyStatement,
+            OptionStatement,
+            OrStatement,
+            SkipStatement,
+            SubruleStatement,
+            EscapedString,
+        } = node.children
 
-        if (atLeastOne) {
-            assert(atLeastOne[0])
-            return buildAtLeastOneStatement(atLeastOne[0])
-        } else if (consume) {
-            assert(consume[0])
-            return buildConsumeStatement(consume[0])
-        } else if (many) {
-            assert(many[0])
-            return buildManyStatement(many[0])
-        } else if (option) {
-            assert(option[0])
-            return buildOptionStatement(option[0])
-        } else if (or) {
-            assert(or[0])
-            return buildOrStatement(or[0])
-        } else if (skip) {
-            assert(skip[0])
-            return buildSkipStatement(skip[0])
-        } else if (subrule) {
-            assert(subrule[0])
-            return buildSubruleStatement(subrule[0])
+        if (AtLeastOneStatement) {
+            assertDefined(AtLeastOneStatement[0])
+            return buildAtLeastOneStatement(AtLeastOneStatement[0])
+        } else if (ConsumeStatement) {
+            assertDefined(ConsumeStatement[0])
+            return buildConsumeStatement(ConsumeStatement[0])
+        } else if (ManyStatement) {
+            assertDefined(ManyStatement[0])
+            return buildManyStatement(ManyStatement[0])
+        } else if (OptionStatement) {
+            assertDefined(OptionStatement[0])
+            return buildOptionStatement(OptionStatement[0])
+        } else if (OrStatement) {
+            assertDefined(OrStatement[0])
+            return buildOrStatement(OrStatement[0])
+        } else if (SkipStatement) {
+            assertDefined(SkipStatement[0])
+            return buildSkipStatement(SkipStatement[0])
+        } else if (SubruleStatement) {
+            assertDefined(SubruleStatement[0])
+            return buildSubruleStatement(SubruleStatement[0])
+        } else {
+            assertNonEmpty(EscapedString)
+            return { node, str: buildEscapedString(EscapedString[0]) }
         }
-        assert(escaped && escaped[0])
-        return { node, str: buildEscapedString(escaped[0]) }
     }
 
 const buildStatementAsBlock: (node: StatementNode) => CodeSegment
     = node => {
-        const segments: CodeSegment[] = []
-        const statementPrefix = '() => '
-        segments.push({ node, str: statementPrefix })
-        segments.push(buildStatement(node))
+        const prefix = '() => '
+        const segments: CodeSegment[] = [
+            { node, str: prefix },
+            buildStatement(node),
+        ]
+
         return { node, segments }
     }
 
 const buildStatementList: (node: StatementListNode) => CodeSegment
     = node => {
-        const statement = node.children.Statement
-        assert(statement)
-
+        const { Statement } = node.children
+        assertDefined(Statement)
         const [prefix, suffix] = ['() => {', '}']
-        const segments: CodeSegment[] = []
-        segments.push({ node, str: prefix })
-        statement.forEach(s => {
-            segments.push(buildStatement(s))
-            segments.push({ node, str: ';' })
-        }),
-            segments.push({ node, str: suffix })
+        const segments: CodeSegment[] = [
+            { node, str: prefix },
+            ...Statement.flatMap(s => [
+                buildStatement(s),
+                { node, str: ';' },
+            ]),
+            { node, str: suffix },
+        ]
+
         return { node, segments }
     }
 
 const buildRuleStatement: (node: RuleStatementNode) => CodeSegment
     = node => {
-        const isExposed = node.children.Equals && node.children.Equals[0]
-        const name = node.children.Identifier
-        const statementList = node.children.StatementList
-        assert(name && name[0])
-        assert(statementList && statementList[0])
+        const isPublic = node.children.Equals && node.children.Equals[0]
+        const { Identifier, StatementList } = node.children
+        assertNonEmpty(Identifier)
+        assertDefined(StatementList)
+        const descriptor = isPublic ? 'public ' : 'private '
+        const [prefix, suffix] = [`${descriptor}${Identifier[0].image} = this.RULE("${Identifier[0].image}", `, ')']
 
-        const descriptor = isExposed ? 'public ' : 'private '
-        const [prefix, suffix] = [`${descriptor}${name[0].image} = this.RULE("${name[0].image}", `, ')']
-        const segments = [
+        const segments: CodeSegment[] = [
             { node, str: prefix },
-            buildStatementList(statementList[0]),
+            buildStatementList(StatementList[0]),
             { node, str: suffix },
         ]
         return { node, segments }
@@ -511,27 +496,23 @@ const buildRuleStatement: (node: RuleStatementNode) => CodeSegment
 
 const buildRootStatement: (node: RootStatementNode) => CodeSegment
     = node => {
-        const rule = node.children.RuleStatement
-        const escaped = node.children.EscapedString
-        if (rule) {
-            assert(rule[0])
-            return buildRuleStatement(rule[0])
+        const { RuleStatement, EscapedString } = node.children
+        if (RuleStatement) {
+            assertDefined(RuleStatement[0])
+            return buildRuleStatement(RuleStatement[0])
+        } else {
+            assertNonEmpty(EscapedString)
+            return { node, str: buildEscapedString(EscapedString[0]) }
         }
-        assert(escaped && escaped[0])
-        return { node, str: buildEscapedString(escaped[0]) }
     }
 
 export const buildRoot: (node: RootNode) => CodeSegment
     = node => {
-        const root = node.children.RootStatement
-        const segments: CodeSegment[] = []
-        if (root) {
-            root.forEach(s => {
-                segments.push(buildRootStatement(s))
-                if (!s.children.EscapedString)
-                    segments.push({ node, str: ';' })
-            })
-            return { node, segments }
-        }
+        const { RootStatement } = node.children
+        const segments: CodeSegment[] = RootStatement ?
+            RootStatement.flatMap(s => s.children.EscapedString ?
+                [buildRootStatement(s)] :
+                [buildRootStatement(s), { node, str: ';' }]) :
+            []
         return { node, segments }
     }
