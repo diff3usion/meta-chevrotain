@@ -1,20 +1,18 @@
 /**
   * This file is generated with meta-chevrotain
   */
-import { IToken } from 'chevrotain'
+import { CstNode, IToken } from 'chevrotain'
 
-interface ArgumentSepNode {
-    name: string
-    children: {
+interface ArgumentSepNode extends CstNode {
+    readonly children: {
         Semicolon?: IToken[]
         Identifier?: IToken[]
     }
     index?: number
 }
 
-interface BacktrackPredicateNode {
-    name: string
-    children: {
+interface BacktrackPredicateNode extends CstNode {
+    readonly children: {
         LAngle?: IToken[]
         Identifier?: IToken[]
         Statement?: StatementNode[]
@@ -23,9 +21,8 @@ interface BacktrackPredicateNode {
     index?: number
 }
 
-interface ArgumentGateNode {
-    name: string
-    children: {
+interface ArgumentGateNode extends CstNode {
+    readonly children: {
         RAngle?: IToken[]
         EscapedString?: IToken[]
         BacktrackPredicate?: BacktrackPredicateNode[]
@@ -33,36 +30,32 @@ interface ArgumentGateNode {
     index?: number
 }
 
-interface ArgumentErrNode {
-    name: string
-    children: {
+interface ArgumentErrNode extends CstNode {
+    readonly children: {
         Exclamation?: IToken[]
         EscapedString?: IToken[]
     }
     index?: number
 }
 
-interface ArgumentMaxLaNode {
-    name: string
-    children: {
+interface ArgumentMaxLaNode extends CstNode {
+    readonly children: {
         Caret?: IToken[]
         EscapedString?: IToken[]
     }
     index?: number
 }
 
-interface ArgumentLabelNode {
-    name: string
-    children: {
+interface ArgumentLabelNode extends CstNode {
+    readonly children: {
         At?: IToken[]
         EscapedString?: IToken[]
     }
     index?: number
 }
 
-interface AtLeastOneArgumentsNode {
-    name: string
-    children: {
+interface AtLeastOneArgumentsNode extends CstNode {
+    readonly children: {
         LBrace?: IToken[]
         RBrace?: IToken[]
         ArgumentSep?: ArgumentSepNode[]
@@ -73,9 +66,8 @@ interface AtLeastOneArgumentsNode {
     index?: number
 }
 
-interface AtLeastOneStatementNode {
-    name: string
-    children: {
+interface AtLeastOneStatementNode extends CstNode {
+    readonly children: {
         OnePlus?: IToken[]
         AtLeastOneArguments?: AtLeastOneArgumentsNode[]
         Statement?: StatementNode[]
@@ -84,9 +76,8 @@ interface AtLeastOneStatementNode {
     index?: number
 }
 
-interface ConsumeArgumentsNode {
-    name: string
-    children: {
+interface ConsumeArgumentsNode extends CstNode {
+    readonly children: {
         LBrace?: IToken[]
         RBrace?: IToken[]
         ArgumentErr?: ArgumentErrNode[]
@@ -95,9 +86,8 @@ interface ConsumeArgumentsNode {
     index?: number
 }
 
-interface ConsumeStatementNode {
-    name: string
-    children: {
+interface ConsumeStatementNode extends CstNode {
+    readonly children: {
         Underscore?: IToken[]
         Identifier?: IToken[]
         ConsumeArguments?: ConsumeArgumentsNode[]
@@ -105,9 +95,8 @@ interface ConsumeStatementNode {
     index?: number
 }
 
-interface ManyArgumentsNode {
-    name: string
-    children: {
+interface ManyArgumentsNode extends CstNode {
+    readonly children: {
         LBrace?: IToken[]
         RBrace?: IToken[]
         ArgumentSep?: ArgumentSepNode[]
@@ -117,9 +106,8 @@ interface ManyArgumentsNode {
     index?: number
 }
 
-interface ManyStatementNode {
-    name: string
-    children: {
+interface ManyStatementNode extends CstNode {
+    readonly children: {
         ZeroPlus?: IToken[]
         ManyArguments?: ManyArgumentsNode[]
         Statement?: StatementNode[]
@@ -128,9 +116,8 @@ interface ManyStatementNode {
     index?: number
 }
 
-interface OptionArgumentsNode {
-    name: string
-    children: {
+interface OptionArgumentsNode extends CstNode {
+    readonly children: {
         LBrace?: IToken[]
         RBrace?: IToken[]
         ArgumentGate?: ArgumentGateNode[]
@@ -139,9 +126,8 @@ interface OptionArgumentsNode {
     index?: number
 }
 
-interface OptionStatementNode {
-    name: string
-    children: {
+interface OptionStatementNode extends CstNode {
+    readonly children: {
         Question?: IToken[]
         OptionArguments?: OptionArgumentsNode[]
         Statement?: StatementNode[]
@@ -150,9 +136,8 @@ interface OptionStatementNode {
     index?: number
 }
 
-interface OrAlternativeArgumentsNode {
-    name: string
-    children: {
+interface OrAlternativeArgumentsNode extends CstNode {
+    readonly children: {
         LBrace?: IToken[]
         EscapedString?: IToken[]
         RBrace?: IToken[]
@@ -161,9 +146,8 @@ interface OrAlternativeArgumentsNode {
     index?: number
 }
 
-interface OrAlternativeNode {
-    name: string
-    children: {
+interface OrAlternativeNode extends CstNode {
+    readonly children: {
         Backslash?: IToken[]
         OrAlternativeArguments?: OrAlternativeArgumentsNode[]
         Statement?: StatementNode[]
@@ -172,9 +156,8 @@ interface OrAlternativeNode {
     index?: number
 }
 
-interface OrArgumentsNode {
-    name: string
-    children: {
+interface OrArgumentsNode extends CstNode {
+    readonly children: {
         LBrace?: IToken[]
         EscapedString?: IToken[]
         RBrace?: IToken[]
@@ -184,9 +167,8 @@ interface OrArgumentsNode {
     index?: number
 }
 
-interface OrStatementNode {
-    name: string
-    children: {
+interface OrStatementNode extends CstNode {
+    readonly children: {
         VBar?: IToken[]
         OrArguments?: OrArgumentsNode[]
         OrAlternative?: OrAlternativeNode[]
@@ -194,18 +176,16 @@ interface OrStatementNode {
     index?: number
 }
 
-interface SkipStatementNode {
-    name: string
-    children: {
+interface SkipStatementNode extends CstNode {
+    readonly children: {
         Minus?: IToken[]
         Identifier?: IToken[]
     }
     index?: number
 }
 
-interface SubruleArgumentsNode {
-    name: string
-    children: {
+interface SubruleArgumentsNode extends CstNode {
+    readonly children: {
         LBrace?: IToken[]
         EscapedString?: IToken[]
         RBrace?: IToken[]
@@ -214,9 +194,8 @@ interface SubruleArgumentsNode {
     index?: number
 }
 
-interface SubruleStatementNode {
-    name: string
-    children: {
+interface SubruleStatementNode extends CstNode {
+    readonly children: {
         Asterisk?: IToken[]
         Identifier?: IToken[]
         SubruleArguments?: SubruleArgumentsNode[]
@@ -224,9 +203,8 @@ interface SubruleStatementNode {
     index?: number
 }
 
-interface StatementNode {
-    name: string
-    children: {
+interface StatementNode extends CstNode {
+    readonly children: {
         EscapedString?: IToken[]
         AtLeastOneStatement?: AtLeastOneStatementNode[]
         ConsumeStatement?: ConsumeStatementNode[]
@@ -239,9 +217,8 @@ interface StatementNode {
     index?: number
 }
 
-interface StatementListNode {
-    name: string
-    children: {
+interface StatementListNode extends CstNode {
+    readonly children: {
         LCurly?: IToken[]
         RCurly?: IToken[]
         Statement?: StatementNode[]
@@ -249,9 +226,8 @@ interface StatementListNode {
     index?: number
 }
 
-interface RuleArgumentsNode {
-    name: string
-    children: {
+interface RuleArgumentsNode extends CstNode {
+    readonly children: {
         LBrace?: IToken[]
         EscapedString?: IToken[]
         RBrace?: IToken[]
@@ -259,9 +235,8 @@ interface RuleArgumentsNode {
     index?: number
 }
 
-interface RuleStatementNode {
-    name: string
-    children: {
+interface RuleStatementNode extends CstNode {
+    readonly children: {
         Equals?: IToken[]
         Identifier?: IToken[]
         RuleArguments?: RuleArgumentsNode[]
@@ -270,18 +245,16 @@ interface RuleStatementNode {
     index?: number
 }
 
-interface RootStatementNode {
-    name: string
-    children: {
+interface RootStatementNode extends CstNode {
+    readonly children: {
         EscapedString?: IToken[]
         RuleStatement?: RuleStatementNode[]
     }
     index?: number
 }
 
-interface RootNode {
-    name: string
-    children: {
+interface RootNode extends CstNode {
+    readonly children: {
         RootStatement?: RootStatementNode[]
     }
     index?: number

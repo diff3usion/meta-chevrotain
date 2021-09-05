@@ -1,7 +1,7 @@
 import { CstElement, CstNode, ILexingResult, IRecognitionException } from 'chevrotain'
 import { js_beautify } from 'js-beautify'
 
-import { ConsumeStatementNode, SubruleStatementNode, StatementNode, RuleStatementNode, RootNode } from './type';
+import { ConsumeStatementNode, SubruleStatementNode, StatementNode, RuleStatementNode, RootNode } from './typing';
 import { MetaParser } from './parser';
 import { lexer, tokens } from './lexer';
 import { buildRoot } from './code_segment'
@@ -50,9 +50,8 @@ const buildRuleType: (r: RuleStatementNode, extraItems?: [string, string][]) => 
     const childrenLines = childrenItems.join('\n        ')
     const extraItemLines = extraItems? '\n    ' + extraItems.map(([key, valueType]) => `${key}?: ${valueType}`).join('\n    '): ''
     return `
-interface ${ruleTypeName} {
-    name: string
-    children: {
+interface ${ruleTypeName} extends CstNode {
+    readonly children: {
         ${childrenLines}
     }${extraItemLines}
 }`
@@ -111,7 +110,7 @@ const buildTypes: (node: RootNode, extraItems?: [string, string][]) => string
         .filter(s => s.children.RuleStatement && s.children.RuleStatement[0])
         .map(rs => rs.children.RuleStatement![0]!)
     if (!rules || !rules[0]) return ''
-    const importLine = "import { IToken } from 'chevrotain'\n"
+    const importLine = "import { CstNode, IToken } from 'chevrotain'\n"
     return importLine + rules.map(r => buildRuleType(r, extraItems)).join('\n')
 }
 
@@ -153,7 +152,7 @@ export const makeTsFile: (root: RootNode) => string
     return js_beautify(generatedFileHeadComment + concatSegments(buildRoot(root)))
 }
 
-export const makeDtsFile: (root: RootNode) => string 
-= root => {
-    return generatedFileHeadComment + buildTypes(root, [["index", "number"]])
+export const makeDtsFile: (root: RootNode, extraItems?: [string, string][]) => string 
+= (root, extraItems) => {
+    return generatedFileHeadComment + buildTypes(root, extraItems)
 }

@@ -1,6 +1,6 @@
 {
   "name": "meta-chevrotain",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "DSL for generating chevrotain parser code and cst typing",
   "author": "diff3usion",
   "license": "MIT",
@@ -14,7 +14,8 @@
     "build/**/*"
   ],
   "scripts": {
-    "start": "ts-node ./build/index.js",
+    "start": "ts-node ./src/index.ts",
+    "bootstrapping": "ts-node ./src/index.ts -i meta_in.txt -p src/parser.ts -t src/typing.d.ts -e index:number",
     "build": "tsc",
     "clean": "tsc --build --clean"
   },

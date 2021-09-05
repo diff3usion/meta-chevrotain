@@ -33,7 +33,8 @@ import {
 export class MetaParser extends CstParser {
     constructor(tokens: TokenType[]) {
         super(tokens, {
-            recoveryEnabled: true
+            recoveryEnabled: true,
+            nodeLocationTracking: "full",
         })
         this.performSelfAnalysis();
     }

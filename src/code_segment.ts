@@ -3,7 +3,7 @@
  */
 
 import { CstNode, IToken } from "chevrotain";
-import { ArgumentSepNode, ArgumentErrNode, ArgumentMaxLaNode, BacktrackPredicateNode, ArgumentGateNode, ArgumentLabelNode, AtLeastOneStatementNode, ConsumeStatementNode, ManyStatementNode, OptionStatementNode, OrAlternativeNode, OrStatementNode, SkipStatementNode, SubruleStatementNode, StatementNode, StatementListNode, RuleStatementNode, RootStatementNode, RootNode, OptionArgumentsNode, AtLeastOneArgumentsNode, ConsumeArgumentsNode, ManyArgumentsNode, OrAlternativeArgumentsNode, OrArgumentsNode, SubruleArgumentsNode } from "./type";
+import { ArgumentSepNode, ArgumentErrNode, ArgumentMaxLaNode, BacktrackPredicateNode, ArgumentGateNode, ArgumentLabelNode, AtLeastOneStatementNode, ConsumeStatementNode, ManyStatementNode, OptionStatementNode, OrAlternativeNode, OrStatementNode, SkipStatementNode, SubruleStatementNode, StatementNode, StatementListNode, RuleStatementNode, RootStatementNode, RootNode, SubruleArgumentsNode } from "./typing";
 
 export type CodeSegment = {
     node: CstNode
@@ -79,7 +79,7 @@ const buildArguments: (node: ArgumentsNode) => CodeSegment
         return { node, segments }
     }
 
-interface ContentNode {
+interface ContentNode extends CstNode {
     name: string
     children: {
         Statement?: StatementNode[]
@@ -90,10 +90,10 @@ interface ContentNode {
 const buildContent = (node: ContentNode) => {
     const { Statement, StatementList } = node.children
     if (StatementList) {
-        assertDefined(StatementList[0])
+        assertDefined(StatementList[0], JSON.stringify(node.location))
         return buildStatementList(StatementList[0])
     } else {
-        assertDefined(Statement && Statement[0])
+        assertDefined(Statement && Statement[0], JSON.stringify(node.location))
         return buildStatementAsBlock(Statement[0])
     }
 }

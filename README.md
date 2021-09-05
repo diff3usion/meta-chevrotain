@@ -14,18 +14,20 @@
   [Generated Typing](https://github.com/diff3usion/meta-chevrotain/blob/main/src/meta_type.d.ts)
   
 ## Requires
-  [node](https://github.com/nodejs/node), [yarn](https://github.com/yarnpkg/berry)
+  - [node](https://github.com/nodejs/node)
+  - [yarn](https://github.com/yarnpkg/berry) (recommended)
   
-## Init
-    yarn
+## Install
+    yarn add meta-chevrotain
     
 ## Usage
-  ### Bootstrapping
-    yarn start -b
+  ### Bootstrapping (in this project library)
+    yarn bootstrapping
   ### Read file and output parser code to console
-    yarn start -i input.txt -p
+    yarn meta-chev -i input.txt -pl
   ### Read file and output typing code to console
-    yarn start -i input.txt -t
+    yarn meta-chev -i input.txt -tl
   ### Read file and output to files
-    yarn start -i input.txt --ts parser.ts --dts cst.d.ts
-
+    yarn meta-chev -i input.txt -p parser.ts -t typing.d.ts
+  ### Read file and output to files with extra typing entries
+    yarn meta-chev -i input.txt -p parser.ts -t typing.d.ts -e index:number
