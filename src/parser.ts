@@ -1,6 +1,7 @@
+
 /**
- * This file is generated with meta-chevrotain
- */
+  * This file is generated with meta-chevrotain
+  */
 
 import {
     CstParser,

@@ -1,6 +1,8 @@
+
 /**
   * This file is generated with meta-chevrotain
   */
+
 import { CstNode, IToken } from 'chevrotain'
 
 interface ArgumentSepNode extends CstNode {
