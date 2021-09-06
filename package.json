@@ -1,6 +1,6 @@
 {
   "name": "meta-chevrotain",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "DSL for generating chevrotain parser code and cst typing",
   "author": "diff3usion",
   "license": "MIT",
