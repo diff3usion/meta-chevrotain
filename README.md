@@ -21,7 +21,7 @@
     yarn add meta-chevrotain
     
 ## Usage
-  ### Bootstrapping (in this project library)
+  ### Bootstrapping (in this project directory)
     yarn bootstrapping
   ### Read file and output parser code to console
     yarn meta-chev -i input.txt -pl
