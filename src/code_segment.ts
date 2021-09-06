@@ -11,28 +11,30 @@ export type CodeSegment = {
     str?: string
 }
 
-interface ArgumentsNode extends CstNode {
-    readonly children: {
-        ArgumentSep?: ArgumentSepNode[]
-        ArgumentErr?: ArgumentErrNode[]
-        ArgumentMaxLa?: ArgumentMaxLaNode[]
-        ArgumentGate?: ArgumentGateNode[]
-        ArgumentLabel?: ArgumentLabelNode[]
-    }
+interface CstNodeWithChildren<T extends {
+    [identifier: string]: (IToken | CstNode)[] | undefined
+}> extends CstNode {
+    readonly children: T
 }
 
-interface ArgumentedStatementNode extends CstNode {
-    readonly children: {
-        AtLeastOneArguments?: AtLeastOneArgumentsNode[]
-        OrArguments?: OrArgumentsNode[]
-        ManyArguments?: ManyArgumentsNode[]
-        RuleArguments?: RuleArgumentsNode[]
-        OptionArguments?: OptionArgumentsNode[]
-        SubruleArguments?: SubruleArgumentsNode[]
-        ConsumeArguments?: ConsumeArgumentsNode[]
-        OrAlternativeArguments?: OrAlternativeArgumentsNode[]
-    }
-}
+type ArgumentsNode = CstNodeWithChildren<{
+    ArgumentSep?: ArgumentSepNode[]
+    ArgumentErr?: ArgumentErrNode[]
+    ArgumentMaxLa?: ArgumentMaxLaNode[]
+    ArgumentGate?: ArgumentGateNode[]
+    ArgumentLabel?: ArgumentLabelNode[]
+}>
+
+type ArgumentedStatementNode = CstNodeWithChildren<{
+    AtLeastOneArguments?: AtLeastOneArgumentsNode[]
+    OrArguments?: OrArgumentsNode[]
+    ManyArguments?: ManyArgumentsNode[]
+    RuleArguments?: RuleArgumentsNode[]
+    OptionArguments?: OptionArgumentsNode[]
+    SubruleArguments?: SubruleArgumentsNode[]
+    ConsumeArguments?: ConsumeArgumentsNode[]
+    OrAlternativeArguments?: OrAlternativeArgumentsNode[]
+}>
 
 const assertDefined: (value: unknown, msg?: string) => asserts value
     = (value, msg) => {
@@ -87,7 +89,6 @@ const buildArguments: (node: ArgumentsNode) => CodeSegment
 const buildOptionalArguments: (argumentsNode?: ArgumentsNode[]) => CodeSegment[]
     = (argumentsNode) => argumentsNode ? [buildArguments(argumentsNode[0])] : []
 
-type CstNodeWithChildren<T extends Object> = CstNode & { children: T }
 const extractContent: (node: CstNodeWithChildren<{ Statement?: StatementNode[], StatementList?: StatementListNode[] }>) => CodeSegment
     = node => {
         const { Statement, StatementList } = node.children
@@ -127,13 +128,13 @@ const extractPropertyIdentifier: (node: CstNodeWithChildren<{ Identifier?: IToke
 const getIndexStr: (node: { index?: number }, def?: string) => string
     = ({ index }, def = '') => index ? `${index}` : def
 
-const embeddedSegments: (node: CstNode, content: (CodeSegment | string)[]) => CodeSegment[]
+const makeSegments: (node: CstNode, content: (CodeSegment | string)[]) => CodeSegment[]
     = (node, content) => content.map(s => typeof s === 'string' ? { node, str: s } : s)
 
 //#region Arguments
 const buildArgumentSep: (node: ArgumentSepNode) => CodeSegment
     = node => {
-        const segments = embeddedSegments(node, [
+        const segments = makeSegments(node, [
             'SEP: ',
             extractIdentifier(node)
         ])
@@ -142,7 +143,7 @@ const buildArgumentSep: (node: ArgumentSepNode) => CodeSegment
 
 const buildArgumentErr: (node: ArgumentErrNode) => CodeSegment
     = node => {
-        const segments = embeddedSegments(node, [
+        const segments = makeSegments(node, [
             'ERR_MSG: ',
             extractEscapedString(node),
         ])
@@ -151,7 +152,7 @@ const buildArgumentErr: (node: ArgumentErrNode) => CodeSegment
 
 const buildArgumentMaxLookAhead: (node: ArgumentMaxLaNode) => CodeSegment
     = node => {
-        const segments = embeddedSegments(node, [
+        const segments = makeSegments(node, [
             'MAX_LOOKAHEAD: ',
             extractEscapedString(node),
         ])
@@ -162,7 +163,7 @@ const buildArgumentGate: (node: ArgumentGateNode) => CodeSegment
     = node => {
         const { BacktrackPredicate } = node.children
         assertNonEmptyIfDefined(BacktrackPredicate)
-        const segments = embeddedSegments(node, [
+        const segments = makeSegments(node, [
             'GATE: ',
             BacktrackPredicate ? buildBacktrackPredicate(BacktrackPredicate[0]) : extractEscapedString(node),
         ])
@@ -171,7 +172,7 @@ const buildArgumentGate: (node: ArgumentGateNode) => CodeSegment
 
 const buildArgumentLabel: (node: ArgumentLabelNode) => CodeSegment
     = node => {
-        const segments = embeddedSegments(node, [
+        const segments = makeSegments(node, [
             'LABEL: ',
             extractEscapedString(node),
         ])
@@ -183,7 +184,7 @@ const buildArgumentLabel: (node: ArgumentLabelNode) => CodeSegment
 const buildBacktrackPredicate: (node: BacktrackPredicateNode) => CodeSegment
     = node => {
         const { Identifier } = node.children
-        const segments = embeddedSegments(node, [
+        const segments = makeSegments(node, [
             'this.', 'BACKTRACK', '(',
             ...Identifier ? extractPropertyIdentifier(node) : [extractContent(node)],
             ')',
@@ -205,7 +206,7 @@ const buildAtLeastOneStatement: (node: AtLeastOneStatementNode) => CodeSegment
         const { AtLeastOneArguments } = node.children
         assertNonEmptyIfDefined(AtLeastOneArguments)
         assertValidArguments(node)
-        const segments = embeddedSegments(node, [
+        const segments = makeSegments(node, [
             'this.', getAtLeastOneFunctionName(node), getIndexStr(node), '({ DEF: ',
             extractContent(node),
             ...buildOptionalArguments(AtLeastOneArguments),
@@ -221,7 +222,7 @@ const buildConsumeStatement: (node: ConsumeStatementNode) => CodeSegment
         const { ConsumeArguments, Identifier } = node.children
         assertNonEmpty(Identifier)
         assertNonEmptyIfDefined(ConsumeArguments)
-        const segments = embeddedSegments(node, [
+        const segments = makeSegments(node, [
             'this.', 'consume', '(', getIndexStr(node, '0'), ', ',
             extractIdentifier(node),
             ...buildOptionalArguments(ConsumeArguments),
@@ -243,7 +244,7 @@ const buildManyStatement: (node: ManyStatementNode) => CodeSegment
     = node => {
         const { ManyArguments } = node.children
         assertValidArguments(node)
-        const segments = embeddedSegments(node, [
+        const segments = makeSegments(node, [
             'this.', getManyFunctionName(node), getIndexStr(node), '({ DEF: ',
             extractContent(node),
             ...buildOptionalArguments(ManyArguments),
@@ -258,7 +259,7 @@ const buildOptionStatement: (node: OptionStatementNode) => CodeSegment
     = node => {
         const { OptionArguments } = node.children
         assertNonEmptyIfDefined(OptionArguments)
-        const segments = embeddedSegments(node, [
+        const segments = makeSegments(node, [
             'this.', 'option', '(', getIndexStr(node, '0'), ', ',
             ...OptionArguments ? [
                 '{ DEF: ',
@@ -279,7 +280,7 @@ const buildOrAlternative: (node: OrAlternativeNode) => CodeSegment
     = node => {
         const { OrAlternativeArguments } = node.children
         assertNonEmptyIfDefined(OrAlternativeArguments)
-        const segments = embeddedSegments(node, [
+        const segments = makeSegments(node, [
             '{ ALT: ',
             extractContent(node),
             ...buildOptionalArguments(OrAlternativeArguments),
@@ -298,7 +299,7 @@ const buildOrStatement: (node: OrStatementNode) => CodeSegment
         const buildOrContent = () => OrAlternative
             .map(a => buildOrAlternative(a))
             .flatMap(seg => [seg, { node, str: ', ' }])
-        const segments = embeddedSegments(node, [
+        const segments = makeSegments(node, [
             'this.', 'or', '(', getIndexStr(node, '0'), ', [',
             ...OrArguments ? [
                 '{ DEF: ',
@@ -315,7 +316,7 @@ const buildOrStatement: (node: OrStatementNode) => CodeSegment
 //#region Skip
 const buildSkipStatement: (node: SkipStatementNode) => CodeSegment
     = node => {
-        const segments = embeddedSegments(node, [
+        const segments = makeSegments(node, [
             'this.', 'SKIP', '(',
             extractIdentifier(node),
             ')',
@@ -328,7 +329,7 @@ const buildSkipStatement: (node: SkipStatementNode) => CodeSegment
 const buildSubruleStatement: (node: SubruleStatementNode) => CodeSegment
     = node => {
         const { SubruleArguments } = node.children
-        const segments = embeddedSegments(node, [
+        const segments = makeSegments(node, [
             'this.', 'subrule', '(', getIndexStr(node, '0'), ',',
             ...extractPropertyIdentifier(node),
             ...buildOptionalArguments(SubruleArguments),
@@ -374,7 +375,7 @@ const buildStatement: (node: StatementNode) => CodeSegment
 
 const buildStatementAsBlock: (node: StatementNode) => CodeSegment
     = node => {
-        const segments = embeddedSegments(node, [
+        const segments = makeSegments(node, [
             '() => ',
             buildStatement(node),
         ])
@@ -385,7 +386,7 @@ const buildStatementList: (node: StatementListNode) => CodeSegment
     = node => {
         const { Statement } = node.children
         assertDefined(Statement)
-        const segments = embeddedSegments(node, [
+        const segments = makeSegments(node, [
             '() => {',
             ...Statement.flatMap(s => [buildStatement(s), { node, str: ';' }]),
             '}',
@@ -401,10 +402,10 @@ const buildRuleStatement: (node: RuleStatementNode) => CodeSegment
         const isPublic = Equals && Equals[0]
         const descriptor = isPublic ? 'public ' : 'private '
         const ruleName = Identifier[0].image
-        const segments = embeddedSegments(node, [
+        const segments = makeSegments(node, [
             descriptor, ruleName, ' = ', 'this.', 'RULE', '("', ruleName, '", ',
             buildStatementList(StatementList[0]),
-            ')',
+            ');',
         ])
         return { node, segments }
     }
@@ -424,10 +425,7 @@ const buildRootStatement: (node: RootStatementNode) => CodeSegment
 export const buildRoot: (node: RootNode) => CodeSegment
     = node => {
         const { RootStatement } = node.children
-        const segments: CodeSegment[] = RootStatement ?
-            RootStatement.flatMap(s => s.children.EscapedString ?
-                [buildRootStatement(s)] :
-                [buildRootStatement(s), { node, str: ';' }]) :
-            []
+        assertNonEmpty(RootStatement)
+        const segments = RootStatement.map(buildRootStatement)
         return { node, segments }
     }
