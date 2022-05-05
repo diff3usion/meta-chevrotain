@@ -6,13 +6,12 @@ import { readFileSync, writeFileSync } from 'fs';
 
 import { lexAndParse, makeDtsFile, makeTsFile } from './dsl';
 
-const parseExtraItems: (s?: string) => [string, string][] | undefined
-    = s => {
-        const res = s?.split(',').map(l => l.split(':'))
-        if (res?.every(i => i.length === 2 && i.every(w => /\w+/.test(w))))
-            return res as [string, string][]
-        return undefined
-    }
+function parseExtraItems(s?: string): [string, string][] | undefined {
+    const res = s?.split(',').map(l => l.split(':'))
+    if (res?.every(i => i.length === 2 && i.every(w => /\w+/.test(w))))
+        return res as [string, string][]
+    return undefined
+}
 
 const argv
     = yargs(hideBin(process.argv))

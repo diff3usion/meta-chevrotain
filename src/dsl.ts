@@ -28,93 +28,92 @@ function visitAll<T extends CstElement>(start: CstNode, nodeName: string, action
     })
 }
 
-const ruleInterfaceTemplate = (name: string, childrenLines: string, extraItemLines: string) => `
+function ruleInterfaceTemplate(name: string, childrenLines: string, extraItemLines: string) {
+    return `
 interface ${name} extends CstNode {
     readonly children: {
         ${childrenLines}
     }${extraItemLines}
 }`
+}
 
-const buildRuleType: (r: RuleStatementNode, extraItems?: [string, string][]) => void
-    = (r, extraItems) => {
-        if (!r || !r.children.Identifier || !r.children.Identifier[0]) return
-        const typeName = (id: string) => `${id}Node`
-        const ruleTypeName = typeName(r.children.Identifier[0].image)
-        const tokenNames = new Set<string>()
-        const nodeNames = new Set<string>()
-        visitAll(r, "ConsumeStatement", (c: ConsumeStatementNode) => {
-            if (c.children.Identifier && c.children.Identifier[0])
-                tokenNames.add(c.children.Identifier[0].image)
-        }, new Set("BacktrackPredicate"))
-        visitAll(r, "SubruleStatement", (s: SubruleStatementNode) => {
-            if (s.children.Identifier && s.children.Identifier[0])
-                nodeNames.add(s.children.Identifier[0].image)
-        }, new Set("BacktrackPredicate"))
-        const childrenItems = [
-            ...Array(...tokenNames).map(name => `${name}?: IToken[]`),
-            ...Array(...nodeNames).map(name => `${name}?: ${typeName(name)}[]`),
-        ]
-        const childrenLines = childrenItems.join('\n        ')
-        const extraItemLines = extraItems ? '\n    ' + extraItems.map(([key, valueType]) => `${key}?: ${valueType}`).join('\n    ') : ''
-        return ruleInterfaceTemplate(ruleTypeName, childrenLines, extraItemLines)
-    }
+function buildRuleType(r: RuleStatementNode, extraItems?: [string, string][]): string | undefined {
+    if (!r || !r.children.Identifier || !r.children.Identifier[0])
+        return
+    const typeName = (id: string) => `${id}Node`
+    const ruleTypeName = typeName(r.children.Identifier[0].image)
+    const tokenNames = new Set<string>()
+    const nodeNames = new Set<string>()
+    visitAll(r, "ConsumeStatement", (c: ConsumeStatementNode) => {
+        if (c.children.Identifier && c.children.Identifier[0])
+            tokenNames.add(c.children.Identifier[0].image)
+    }, new Set("BacktrackPredicate"))
+    visitAll(r, "SubruleStatement", (s: SubruleStatementNode) => {
+        if (s.children.Identifier && s.children.Identifier[0])
+            nodeNames.add(s.children.Identifier[0].image)
+    }, new Set("BacktrackPredicate"))
+    const childrenItems = [
+        ...Array(...tokenNames).map(name => `${name}?: IToken[]`),
+        ...Array(...nodeNames).map(name => `${name}?: ${typeName(name)}[]`),
+    ]
+    const childrenLines = childrenItems.join('\n        ')
+    const extraItemLines = extraItems ? '\n    ' + extraItems.map(([key, valueType]) => `${key}?: ${valueType}`).join('\n    ') : ''
+    return ruleInterfaceTemplate(ruleTypeName, childrenLines, extraItemLines)
+}
 
-const indexRule: (r: RuleStatementNode) => void
-    = r => {
-        const counter = new Map<string, number>()
-        const indexSpecificStatement: (node: { index?: number }[], key: string) => void
-            = (node, key) => {
-                if (!node[0]) return
-                node[0].index = mapGetOrDef(counter, key, 0)
-                counter.set(key, counter.get(key)! + 1)
+function indexRule(r: RuleStatementNode): void {
+    const counter = new Map<string, number>()
+    const indexSpecificStatement: (node: { index?: number }[], key: string) => void
+        = (node, key) => {
+            if (!node[0]) return
+            node[0].index = mapGetOrDef(counter, key, 0)
+            counter.set(key, counter.get(key)! + 1)
+        }
+    const indexStatement: (s: StatementNode) => void
+        = s => {
+            const atLeastOne = s.children.AtLeastOneStatement
+            const consume = s.children.ConsumeStatement
+            const many = s.children.ManyStatement
+            const option = s.children.OptionStatement
+            const or = s.children.OrStatement
+            const subrule = s.children.SubruleStatement
+            if (atLeastOne) {
+                indexSpecificStatement(atLeastOne, "atLeastOne")
+            } else if (consume) {
+                indexSpecificStatement(consume, "consume")
+            } else if (many) {
+                indexSpecificStatement(many, "many")
+            } else if (option) {
+                indexSpecificStatement(option, "option")
+            } else if (or) {
+                indexSpecificStatement(or, "or")
+            } else if (subrule) {
+                indexSpecificStatement(subrule, "subrule")
             }
-        const indexStatement: (s: StatementNode) => void
-            = s => {
-                const atLeastOne = s.children.AtLeastOneStatement
-                const consume = s.children.ConsumeStatement
-                const many = s.children.ManyStatement
-                const option = s.children.OptionStatement
-                const or = s.children.OrStatement
-                const subrule = s.children.SubruleStatement
-                if (atLeastOne) {
-                    indexSpecificStatement(atLeastOne, "atLeastOne")
-                } else if (consume) {
-                    indexSpecificStatement(consume, "consume")
-                } else if (many) {
-                    indexSpecificStatement(many, "many")
-                } else if (option) {
-                    indexSpecificStatement(option, "option")
-                } else if (or) {
-                    indexSpecificStatement(or, "or")
-                } else if (subrule) {
-                    indexSpecificStatement(subrule, "subrule")
-                }
-            }
-        visitAll(r, "Statement", indexStatement)
-    }
+        }
+    visitAll(r, "Statement", indexStatement)
+}
 
-const prebuildIndexes: (node: RootNode) => void
-    = node => {
-        const rootStatements = node.children.RootStatement
-        if (!rootStatements || !rootStatements[0]) return
-        const rules = rootStatements
-            .filter(s => s.children.RuleStatement && s.children.RuleStatement[0])
-            .map(rs => rs.children.RuleStatement![0]!)
-        if (!rules || !rules[0]) return
-        rules.forEach(indexRule)
-    }
+function prebuildIndexes(node: RootNode): void {
+    const rootStatements = node.children.RootStatement
+    if (!rootStatements || !rootStatements[0]) return
+    const rules = rootStatements
+        .filter(s => s.children.RuleStatement && s.children.RuleStatement[0])
+        .map(rs => rs.children.RuleStatement![0]!)
+    if (!rules || !rules[0]) return
+    rules.forEach(indexRule)
+}
 
-const buildTypes: (node: RootNode, extraItems?: [string, string][]) => string
-    = (node, extraItems) => {
-        const rootStatements = node.children.RootStatement
-        if (!rootStatements || !rootStatements[0]) return ''
-        const rules = rootStatements
-            .filter(s => s.children.RuleStatement && s.children.RuleStatement[0])
-            .map(rs => rs.children.RuleStatement![0]!)
-        if (!rules || !rules[0]) return ''
-        const importLine = "import { CstNode, IToken } from 'chevrotain'\n"
-        return importLine + rules.map(r => buildRuleType(r, extraItems)).join('\n')
-    }
+function buildTypes(node: RootNode, extraItems?: [string, string][]): string {
+    const rootStatements = node.children.RootStatement
+    if (!rootStatements || !rootStatements[0]) return ''
+    const rules = rootStatements
+        .filter(s => s.children.RuleStatement && s.children.RuleStatement[0])
+        .map(rs => rs.children.RuleStatement![0]!)
+    if (!rules || !rules[0]) return ''
+    const importLine = "import { CstNode, IToken } from 'chevrotain'\n"
+    return importLine + rules.map(r => buildRuleType(r, extraItems)).join('\n')
+}
 
 export type ParseResult = {
     cst: RootNode,
@@ -122,25 +121,24 @@ export type ParseResult = {
     parseErrors: IRecognitionException[]
 }
 
-export const lexAndParse: (text: string) => ParseResult
-    = text => {
-        const lexResult = lexer.tokenize(text)
-        const parser = new MetaParser(tokens)
-        // setting a new input will RESET the parser instance's state.
-        parser.input = lexResult.tokens
-        // any top level rule may be used as an entry point
-        const cst = parser.Root();
+export function lexAndParse(text: string): ParseResult {
+    const lexResult = lexer.tokenize(text)
+    const parser = new MetaParser(tokens)
+    // setting a new input will RESET the parser instance's state.
+    parser.input = lexResult.tokens
+    // any top level rule may be used as an entry point
+    const cst = parser.Root();
 
-        return {
-            cst: cst,
-            lexResult: lexResult,
-            parseErrors: parser.errors
-        }
+    return {
+        cst: cst,
+        lexResult: lexResult,
+        parseErrors: parser.errors
     }
+}
 
-const concatSegments: (pair: JsSegment) => string
-    = ({ str, segments }) =>
-        str ? str : segments ? segments.map(concatSegments).join('') : ''
+function concatSegments({ str, segments }: JsSegment): string {
+    return str ? str : segments ? segments.map(concatSegments).join('') : ''
+}
 
 const generatedFileHeadComment = `
 /**
@@ -149,13 +147,11 @@ const generatedFileHeadComment = `
 
 `
 
-export const makeTsFile: (root: RootNode) => string
-    = root => {
-        prebuildIndexes(root)
-        return generatedFileHeadComment + js_beautify(concatSegments(buildRoot(root)))
-    }
+export function makeTsFile(root: RootNode): string {
+    prebuildIndexes(root)
+    return generatedFileHeadComment + js_beautify(concatSegments(buildRoot(root)))
+}
 
-export const makeDtsFile: (root: RootNode, extraItems?: [string, string][]) => string
-    = (root, extraItems) => {
-        return generatedFileHeadComment + buildTypes(root, extraItems)
-    }
+export function makeDtsFile(root: RootNode, extraItems?: [string, string][]): string {
+    return generatedFileHeadComment + buildTypes(root, extraItems)
+}
