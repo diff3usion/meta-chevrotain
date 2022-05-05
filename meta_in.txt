@@ -1,42 +1,3 @@
-#
-import {
-    CstParser,
-    TokenType
-} from "chevrotain";
-import {
-    Semicolon,
-    Identifier,
-    LAngle,
-    RAngle,
-    EscapedString,
-    Exclamation,
-    Caret,
-    At,
-    LBrace,
-    RBrace,
-    OnePlus,
-    Underscore,
-    ZeroPlus,
-    Question,
-    Backslash,
-    VBar,
-    Minus,
-    Asterisk,
-    LCurly,
-    RCurly,
-    Equals
-} from "./lexer";
-
-export class MetaParser extends CstParser {
-    constructor(tokens: TokenType[]) {
-        super(tokens, {
-            recoveryEnabled: true,
-            nodeLocationTracking: "full",
-        })
-        this.performSelfAnalysis();
-    }
-#
-
 ArgumentSep {
     _Semicolon
     _Identifier
@@ -186,7 +147,3 @@ RootStatement {
 =Root {
     0+*RootStatement
 }
-
-#
-}
-#

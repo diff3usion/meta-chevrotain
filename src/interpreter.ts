@@ -3,6 +3,7 @@
  */
 
 import { CstNode, IToken } from "chevrotain";
+import { MetaChevrotainConfig } from "./dsl";
 import { ArgumentSepNode, ArgumentErrNode, ArgumentMaxLaNode, BacktrackPredicateNode, ArgumentGateNode, ArgumentLabelNode, AtLeastOneStatementNode, ConsumeStatementNode, ManyStatementNode, OptionStatementNode, OrAlternativeNode, OrStatementNode, SkipStatementNode, SubruleStatementNode, StatementNode, StatementListNode, RuleStatementNode, RootStatementNode, RootNode, SubruleArgumentsNode, ManyArgumentsNode, AtLeastOneArgumentsNode, OrArgumentsNode, RuleArgumentsNode, OptionArgumentsNode, ConsumeArgumentsNode, OrAlternativeArgumentsNode } from "./typing";
 
 export type CodeSegment = {
@@ -373,12 +374,12 @@ function buildStatementList(node: StatementListNode): CodeSegment {
     return { node, segments }
 }
 
-function buildRuleStatement(node: RuleStatementNode): CodeSegment {
+function buildRuleStatement(node: RuleStatementNode, config: MetaChevrotainConfig): CodeSegment {
     const { Identifier, StatementList, Equals } = node.children
     assertNonEmpty(Identifier)
     assertDefined(StatementList)
     const isPublic = Equals && Equals[0]
-    const descriptor = isPublic ? 'public ' : 'private '
+    const descriptor = config.useJs ? '' : isPublic ? 'public ' : 'private '
     const ruleName = Identifier[0].image
     const segments = makeSegments(node, [
         descriptor, ruleName, ' = ', 'this.', 'RULE', '("', ruleName, '", ',
@@ -388,20 +389,20 @@ function buildRuleStatement(node: RuleStatementNode): CodeSegment {
     return { node, segments }
 }
 
-function buildRootStatement(node: RootStatementNode): CodeSegment {
+function buildRootStatement(node: RootStatementNode, config: MetaChevrotainConfig): CodeSegment {
     const { RuleStatement, EscapedString } = node.children
     if (RuleStatement) {
         assertDefined(RuleStatement[0])
-        return buildRuleStatement(RuleStatement[0])
+        return buildRuleStatement(RuleStatement[0], config)
     } else {
         assertNonEmpty(EscapedString)
         return { node, str: buildEscapedString(EscapedString[0]) }
     }
 }
 
-export function buildRoot(node: RootNode): CodeSegment {
+export function buildRoot(node: RootNode, config: MetaChevrotainConfig): CodeSegment {
     const { RootStatement } = node.children
     assertNonEmpty(RootStatement)
-    const segments = RootStatement.map(buildRootStatement)
+    const segments = RootStatement.map(rs => buildRootStatement(rs, config))
     return { node, segments }
 }

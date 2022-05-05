@@ -1,15 +1,19 @@
-import { CstElement, CstNode, ILexingResult, IRecognitionException } from 'chevrotain'
+import { CstElement, CstNode, ILexingResult, IParserConfig, IRecognitionException } from 'chevrotain'
 import { js_beautify } from 'js-beautify'
 
 import { ConsumeStatementNode, SubruleStatementNode, StatementNode, RuleStatementNode, RootNode } from './typing';
 import { MetaParser } from './parser';
 import { lexer, tokens } from './lexer';
-import { buildRoot } from './code_segment'
+import { buildRoot, CodeSegment } from './interpreter'
 
-export type JsSegment = {
-    node: CstNode
-    segments?: JsSegment[]
-    str?: string
+const parserImportLine = `import { CstParser, IParserConfig, TokenVocabulary } from 'chevrotain'\n`
+const typingImportLine = `import { CstNode, IToken } from 'chevrotain'\n`
+
+export type MetaChevrotainConfig = {
+    useJs: boolean
+    useModule: boolean
+    lexerImportPath?: string
+    extraNodeProperties?: { [key: string]: string }
 }
 
 const mapGetOrDef: <T, F>(map: Map<T, F>, key: T, def: F) => F = (map, key, def) => {
@@ -37,7 +41,7 @@ interface ${name} extends CstNode {
 }`
 }
 
-function buildRuleType(r: RuleStatementNode, extraItems?: [string, string][]): string | undefined {
+function buildRuleType(r: RuleStatementNode, config: MetaChevrotainConfig): string | undefined {
     if (!r || !r.children.Identifier || !r.children.Identifier[0])
         return
     const typeName = (id: string) => `${id}Node`
@@ -57,8 +61,12 @@ function buildRuleType(r: RuleStatementNode, extraItems?: [string, string][]): s
         ...Array(...nodeNames).map(name => `${name}?: ${typeName(name)}[]`),
     ]
     const childrenLines = childrenItems.join('\n        ')
-    const extraItemLines = extraItems ? '\n    ' + extraItems.map(([key, valueType]) => `${key}?: ${valueType}`).join('\n    ') : ''
-    return ruleInterfaceTemplate(ruleTypeName, childrenLines, extraItemLines)
+    const extraPropertyLines = config.extraNodeProperties
+        ? '\n    ' + Object.entries(config.extraNodeProperties)
+            .map(([key, valueType]) => `${key}?: ${valueType}`)
+            .join('\n    ')
+        : ''
+    return ruleInterfaceTemplate(ruleTypeName, childrenLines, extraPropertyLines)
 }
 
 function indexRule(r: RuleStatementNode): void {
@@ -104,15 +112,14 @@ function prebuildIndexes(node: RootNode): void {
     rules.forEach(indexRule)
 }
 
-function buildTypes(node: RootNode, extraItems?: [string, string][]): string {
+function buildTypes(node: RootNode, config: MetaChevrotainConfig): string {
     const rootStatements = node.children.RootStatement
     if (!rootStatements || !rootStatements[0]) return ''
     const rules = rootStatements
         .filter(s => s.children.RuleStatement && s.children.RuleStatement[0])
         .map(rs => rs.children.RuleStatement![0]!)
     if (!rules || !rules[0]) return ''
-    const importLine = "import { CstNode, IToken } from 'chevrotain'\n"
-    return importLine + rules.map(r => buildRuleType(r, extraItems)).join('\n')
+    return rules.map(r => buildRuleType(r, config)).join('\n')
 }
 
 export type ParseResult = {
@@ -123,7 +130,10 @@ export type ParseResult = {
 
 export function lexAndParse(text: string): ParseResult {
     const lexResult = lexer.tokenize(text)
-    const parser = new MetaParser(tokens)
+    const parser = new MetaParser(tokens, {
+        recoveryEnabled: true,
+        nodeLocationTracking: "full",
+    })
     // setting a new input will RESET the parser instance's state.
     parser.input = lexResult.tokens
     // any top level rule may be used as an entry point
@@ -136,7 +146,7 @@ export function lexAndParse(text: string): ParseResult {
     }
 }
 
-function concatSegments({ str, segments }: JsSegment): string {
+function concatSegments({ str, segments }: CodeSegment): string {
     return str ? str : segments ? segments.map(concatSegments).join('') : ''
 }
 
@@ -147,11 +157,45 @@ const generatedFileHeadComment = `
 
 `
 
-export function makeTsFile(root: RootNode): string {
-    prebuildIndexes(root)
-    return generatedFileHeadComment + js_beautify(concatSegments(buildRoot(root)))
+function wrapInParserClass(content: string, config: MetaChevrotainConfig) {
+    const { useJs, useModule } = config
+    const constructorArgs = useJs
+        ? 'tokenVocabulary, config'
+        : 'tokenVocabulary: TokenVocabulary, config?: IParserConfig'
+    return `${useModule ? 'export ' : ''}class MetaParser extends CstParser {
+    constructor(${constructorArgs}) {
+        super(tokenVocabulary, config)
+        this.performSelfAnalysis();
+    }
+    ${content}
+}
+`
 }
 
-export function makeDtsFile(root: RootNode, extraItems?: [string, string][]): string {
-    return generatedFileHeadComment + buildTypes(root, extraItems)
+function allLexerTokens(root: RootNode) {
+    const visited = new Set<string>()
+    visitAll(root, "ConsumeStatement", ({ children: { Identifier } }: ConsumeStatementNode) => {
+        if (Identifier && Identifier[0]) {
+            visited.add(Identifier[0].image)
+        }
+    })
+    return Array.from(visited).sort()
+}
+
+function parserImports(root: RootNode, config: MetaChevrotainConfig) {
+    const lexerImportLine = config.lexerImportPath
+        ? `import { ${allLexerTokens(root).join(', ')} } from '${config.lexerImportPath}'\n`
+        : ''
+    return parserImportLine + lexerImportLine
+}
+
+export function parserFileContent(root: RootNode, config: MetaChevrotainConfig): string {
+    prebuildIndexes(root)
+    const ruleProperties = concatSegments(buildRoot(root, config))
+    const parserClass = wrapInParserClass(ruleProperties, config)
+    return generatedFileHeadComment + (config.useModule ? parserImports(root, config) : '') + js_beautify(parserClass)
+}
+
+export function typingFileContent(root: RootNode, config: MetaChevrotainConfig): string {
+    return generatedFileHeadComment + (config.useModule ? typingImportLine : '') + buildTypes(root, config)
 }

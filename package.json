@@ -15,7 +15,7 @@
   ],
   "scripts": {
     "start": "ts-node ./src/index.ts",
-    "bootstrapping": "ts-node ./src/index.ts -i meta_in.txt -p src/parser.ts -t src/typing.d.ts -e index:number",
+    "bootstrapping": "ts-node ./src/index.ts -i meta_in.txt -p src/parser.ts -t src/typing.d.ts -c ./meta_config.json",
     "build": "tsc",
     "clean": "tsc --build --clean"
   },

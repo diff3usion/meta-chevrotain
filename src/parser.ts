@@ -3,40 +3,11 @@
   * This file is generated with meta-chevrotain
   */
 
-import {
-    CstParser,
-    TokenType
-} from "chevrotain";
-import {
-    Semicolon,
-    Identifier,
-    LAngle,
-    RAngle,
-    EscapedString,
-    Exclamation,
-    Caret,
-    At,
-    LBrace,
-    RBrace,
-    OnePlus,
-    Underscore,
-    ZeroPlus,
-    Question,
-    Backslash,
-    VBar,
-    Minus,
-    Asterisk,
-    LCurly,
-    RCurly,
-    Equals
-} from "./lexer";
-
+import { CstParser, IParserConfig, TokenVocabulary } from 'chevrotain'
+import { Asterisk, At, Backslash, Caret, Equals, EscapedString, Exclamation, Identifier, LAngle, LBrace, LCurly, Minus, OnePlus, Question, RAngle, RBrace, RCurly, Semicolon, Underscore, VBar, ZeroPlus } from './lexer'
 export class MetaParser extends CstParser {
-    constructor(tokens: TokenType[]) {
-        super(tokens, {
-            recoveryEnabled: true,
-            nodeLocationTracking: "full",
-        })
+    constructor(tokenVocabulary: TokenVocabulary, config ? : IParserConfig) {
+        super(tokenVocabulary, config)
         this.performSelfAnalysis();
     }
     private ArgumentSep = this.RULE("ArgumentSep", () => {

@@ -1,0 +1,8 @@
+{
+    "useJs": false,
+    "useModule": true,
+    "lexerImportPath": "./lexer",
+    "extraNodeProperties": {
+        "index": "number"
+    }
+}

@@ -4,13 +4,17 @@ import yargs from 'yargs/yargs'
 import { hideBin } from 'yargs/helpers'
 import { readFileSync, writeFileSync } from 'fs';
 
-import { lexAndParse, makeDtsFile, makeTsFile } from './dsl';
+import { lexAndParse, MetaChevrotainConfig, parserFileContent, typingFileContent } from './dsl';
 
-function parseExtraItems(s?: string): [string, string][] | undefined {
-    const res = s?.split(',').map(l => l.split(':'))
-    if (res?.every(i => i.length === 2 && i.every(w => /\w+/.test(w))))
-        return res as [string, string][]
-    return undefined
+const defaultConfig: MetaChevrotainConfig = {
+    useJs: false,
+    useModule: true,
+}
+
+function readConfigFile(configFilePath: string): MetaChevrotainConfig {
+    const configJson = readFileSync(configFilePath, 'utf-8')
+    const parsedConfigJson = JSON.parse(configJson)
+    return { ...defaultConfig, ...parsedConfigJson }
 }
 
 const argv
@@ -36,21 +40,19 @@ const argv
                 type: 'boolean',
                 desc: "Output to console instead of file",
             },
-            extra: {
-                alias: 'e',
+            config: {
+                alias: 'c',
                 type: 'string',
-                desc: "Extra typing entries to append to node interfaces",
+                desc: "Configuration file",
             }
         })
-        .usage("Usage: $0 -i <InputFile> --ts <OutputParserFile> --dts <OutputTypingFile>")
+        .usage("Usage: $0 -i <InputFile> -p <OutputParserFile> -t <OutputTypingFile>")
         .help('help')
         .check(argv => {
             if (!argv.input)
                 throw new Error("Needs input file, use '-i input.txt")
             if (argv.parser === undefined && argv.typing === undefined)
                 throw new Error("Needs further action after input, use '-p parser.ts -t typing.d.ts'")
-            if (argv.extra && parseExtraItems(argv.extra) === undefined)
-                throw new Error("Invalid extra typing entries format, example is '-e index:number'")
             return true
         })
         .parseSync();
@@ -58,17 +60,22 @@ const argv
 if (argv.input) {
     const inputFile = readFileSync(argv.input, 'utf-8')
     const cstRoot = lexAndParse(inputFile).cst
+    const config = argv.config ? readConfigFile(argv.config) : defaultConfig
     if (argv.log) {
-        if (argv.parser !== undefined) {
+        if (argv.parser) {
             console.log("// Parser: ")
-            console.log(makeTsFile(cstRoot))
+            console.log(parserFileContent(cstRoot, config))
         }
-        if (argv.typing !== undefined) {
+        if (argv.typing) {
             console.log("// Typing: ")
-            console.log(makeDtsFile(cstRoot, parseExtraItems(argv.extra)))
+            console.log(typingFileContent(cstRoot, config))
         }
     } else {
-        if (argv.parser) writeFileSync(argv.parser, makeTsFile(cstRoot), 'utf-8')
-        if (argv.typing) writeFileSync(argv.typing, makeDtsFile(cstRoot, parseExtraItems(argv.extra)), 'utf-8')
+        if (argv.parser) {
+            writeFileSync(argv.parser, parserFileContent(cstRoot, config), 'utf-8')
+        }
+        if (argv.typing) {
+            writeFileSync(argv.typing, typingFileContent(cstRoot, config), 'utf-8')
+        }
     }
 }
